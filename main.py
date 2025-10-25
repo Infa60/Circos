@@ -208,7 +208,6 @@ gmfcs_cfg = TrackConfig(
 
 )
 
-
 # 2️) CP TYPE (orange)
 cp_type_cfg = TrackConfig(
     input_xlsx=EXCEL_PATH,
