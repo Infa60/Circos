@@ -19,7 +19,7 @@ import re
 INPUT_XLSX  = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
 SHEET_NAME  = 0
 OUTPUT_TXT  = r"C:\Circos_project\Circos_review\articles.data.txt"
-END_VALUE   = 100
+END_VALUE   = 60
 COLOR_VALUE = "black"
 COL_REF     = "ref"
 COL_ARTNB   = "ArtNb"
@@ -33,7 +33,7 @@ def normalize_ref(ref: str) -> str:
     if not s:
         return s
     if REPLACE_SPACES:
-        s = re.sub(r"[^\w\.]", "_", s)   # garde lettres et points
+        s = re.sub(r"[^\w\.,]", "_", s)   # garde lettres et points
         s = re.sub(r"_+", "_", s)       # compresse plusieurs underscores
     return s
 

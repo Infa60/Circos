@@ -54,7 +54,7 @@ class TrackConfig:
 
 # ===================== Moteur générique =====================
 
-def build_track(cfg: TrackConfig):
+def build_track(cfg: TrackConfig, start_line, end_line):
     # Dérivés automatiques (pas de duplication)
     cols = [s.excel_col for s in cfg.sections]
     section_map: Dict[str, Tuple[str, int, str]] = {s.excel_col: (s.tlabel, s.y, s.color) for s in cfg.sections}
@@ -105,7 +105,7 @@ def build_track(cfg: TrackConfig):
             if low == "???":
                 if cfg.special_na:
                     tlabel_na, y_na, color_na = cfg.special_na
-                    bucket[tlabel_na].append(f"{art}\t0\t25\t{tlabel_na}\t0\t{y_na}\tcolor={color_na}")
+                    bucket[tlabel_na].append(f"{art}\t{start_line}\t{end_line}\t{tlabel_na}\t0\t{y_na}\tcolor={color_na}")
                 else:
                     if cfg.treat_empty_as_error:
                         errors.append((art, col))
@@ -123,7 +123,7 @@ def build_track(cfg: TrackConfig):
 
             # Sinon -> on compte la présence dans la section
             tlabel, y, color = section_map[col]
-            bucket[tlabel].append(f"{art}\t0\t25\t{tlabel}\t0\t{y}\tcolor={color}")
+            bucket[tlabel].append(f"{art}\t{start_line}\t{end_line}\t{tlabel}\t0\t{y}\tcolor={color}")
 
     # Dédupe
     if cfg.dedup:
@@ -198,13 +198,13 @@ gmfcs_cfg = TrackConfig(
     sheet=SHEET_IDX,
     col_art=COL_ART,
     sections=[
-        Section("GMFCS-I",   "typeGMFCS-I",   490, "vvdred"),
-        Section("GMFCS-II",  "typeGMFCS-II",  530,  "vdred"),
-        Section("GMFCS-III", "typeGMFCS-III", 220,  "dred"),
-        Section("GMFCS-IV",  "typeGMFCS-IV",  90,  "red"),
+        Section("GMFCS-I",   "typeGMFCS-I",   374, "120,0,0"),
+        Section("GMFCS-II",  "typeGMFCS-II",  400,  "160,20,20"),
+        Section("GMFCS-III", "typeGMFCS-III", 203,  "200,40,40"),
+        Section("GMFCS-IV",  "typeGMFCS-IV",  95,  "230,80,80"),
     ],
     out_prefix=r"C:\Circos_project\Circos_review\gmfcs_level",
-    special_na = ("typeGMFCS-Unspecified", 120, "vlred"),  # "???" traités ici
+    special_na = ("typeGMFCS-Unspecified", 139, "255,150,150"),  # "???" traités ici
 
 )
 
@@ -214,13 +214,13 @@ cp_type_cfg = TrackConfig(
     sheet=0,
     col_art="ArtNb",
     sections=[
-        Section("Spastic",     "typeSpastic",     460, "vvdorange"),
-        Section("Dyskinetic",  "typeDyskinetic",  40, "vdorange"),
-        Section("Ataxic",      "typeAtaxic",      30,  "dorange"),
-        Section("Mixed",       "typeMixed",       10,  "orange"),
+        Section("Spastic",     "typeSpastic",     349, "120,45,0"),
+        Section("Dyskinetic",  "typeDyskinetic",  89, "165,60,0"),
+        Section("Ataxic",      "typeAtaxic",      82,  "210,85,0"),
+        Section("Mixed",       "typeMixed",       70,  "240,120,30"),
     ],
     out_prefix=r"C:\Circos_project\Circos_review\cp_type",
-    special_na = ("typeType-Unspecified", 300, "lorange"),  # "???" traités ici
+    special_na = ("typeType-Unspecified", 254, "255,160,80"),  # "???" traités ici
 
 )
 
@@ -230,12 +230,12 @@ laterality_cfg = TrackConfig(
     sheet=0,
     col_art="ArtNb",
     sections=[
-        Section("Hemiplegic", "typeHemiplegic", 400, "vvdyellow"),
-        Section("Diplegic",  "typeDiplegic",  530, "dyellow"),
-        Section("Quadriplegic", "typeQuadriplegic", 70, "yellow"),
+        Section("Hemiplegic", "typeHemiplegic", 317, "150,120,0"),
+        Section("Diplegic",  "typeDiplegic",  393, "200,160,0"),
+        Section("Quadriplegic", "typeQuadriplegic", 108, "240,200,20"),
     ],
     out_prefix=r"C:\Circos_project\Circos_review\cp_laterality",
-    special_na = ("typeLaterality-Unspecified", 70, "lyellow"),  # "???" traités ici
+    special_na = ("typeLaterality-Unspecified", 108, "255,230,80"),  # "???" traités ici
 
 )
 
@@ -245,14 +245,14 @@ assessment_tools_cfg = TrackConfig(
     sheet=0,
     col_art="ArtNb",
     sections=[
-        Section("Optoelectronique",       "typeOptoelectronique",       470, "vvdgreen"),
-        Section("Force-plate",            "typeForce_plate",            370, "vdgreen"),
-        Section("IMU",                    "typeIMU",                    60,  "dgreen"),
-        Section("EMG",                    "typeEMG",                    130, "green"),
-        Section("Wii-fit",                "typeWii_fit",                20,  "dpgreen"),
-        Section("Heart-rate-monitor",     "typeHeart_rate_monitor",     70,  "lgreen"),
-        Section("Indirect-calorimetry",   "typeIndirect_calorimetry",   70,  "vlgreen"),
-        Section("Other",                  "typeOther",                  70,  "vvlgreen"),
+        Section("Optoelectronique",       "typeOptoelectronique",       355, "40,90,40"),
+        Section("Force-plate",            "typeForce_plate",            298, "55,120,55"),
+        Section("EMG",                    "typeEMG",                    139, "70,150,70"),
+        Section("Heart-rate-monitor",       "typeHeart_rate_monitor",       108,   "90,180,90"),
+        Section("Indirect-calorimetry",     "typeIndirect_calorimetry",     108,  "120,200,120"),
+        Section("IMU",                       "typeIMU",                     101,  "150,220,150"),
+        Section("Wii-fit",                  "typeWii_fit",                  76,   "180,240,180"),
+        Section("Other-tools",            "typeOther-tools",            108,  "210,255,210"),
     ],
     out_prefix=r"C:\Circos_project\Circos_review\assessment_tools"
 )
@@ -263,12 +263,14 @@ assessment_type_cfg = TrackConfig(
     sheet=0,
     col_art="ArtNb",
     sections=[
-        Section("Spatiotemporal",    "typeSpatiotemporal",    490, "vvdpurple"),
-        Section("Kinematic",         "typeKinematic",         470, "vdpurple"),
-        Section("Kinetic",           "typeKinetic",           240, "dpurple"),
-        Section("Electromyographic", "typeElectromyographic", 120, "purple"),
-        Section("Metabolic",         "typeMetabolic",         100, "lpurple"),
-        Section("Stability",         "typeStability",         160, "vlpurple"),
+
+        Section("Spatiotemporal",    "typeSpatiotemporal",    374, "40,90,190"),    # bleu soutenu mais lisible
+        Section("Kinematic",         "typeKinematic",         355, "55,120,210"),   # bleu moyen
+        Section("Kinetic",           "typeKinetic",           215, "70,150,230"),   # bleu clair équilibré
+        Section("Stability",         "typeStability",         165, "90,170,240"),   # bleu lumineux
+        Section("Electromyographic", "typeElectromyographic", 139, "120,190,250"),  # bleu clair
+        Section("Metabolic",         "typeMetabolic",         127, "170,215,255" ), # bleu très clair / pastel
+
     ],
     out_prefix=r"C:\Circos_project\Circos_review\assessment_type"
 )
@@ -279,19 +281,36 @@ task_type_cfg = TrackConfig(
     sheet=0,
     col_art="ArtNb",
     sections=[
-        Section("Sit-to-stand",      "typeSit-to-stand",      230, "vvdblue"),
-        Section("Running",           "typeRunning",           160, "vdblue"),
-        Section("Cycling",           "typeCycling",           100, "dblue"),
-        Section("Stair-negotiation", "typeStair-negotiation", 90,  "blue"),
-        Section("Obstacle-clearance","typeObstacle-clearance",50,  "lblue"),
-        Section("TUG",               "typeTUG",               30,  "dpblue"),
-        Section("Game",              "typeGame",              30,  "vlblue"),
-        Section("One-leg-standing",  "typeOne-leg-standing",  20,  "vvlblue"),
-        Section("Jumping",           "typeJumping",           20,  "vlblue"),
-        Section("Stepping-target",   "typeStepping-target",   20,  "vlblue"),
-        Section("Squat",             "typeSquat",             10,  "vlblue"),
-        Section("Hopping",           "typeHopping",           10,  "vlblue"),
-        Section("GMFM-E",            "typeGMFM-E",            10,  "vvlblue"),
+
+
+        #Section("Sit-to-stand",      "typeSit-to-stand",      209, "0,82,170"),   # foncé mais pas trop
+        #Section("Running",           "typeRunning",           165, "0,95,190"),   # un peu plus clair
+        #Section("Cycling",           "typeCycling",           127, "0,110,210"),  # bleu moyen
+        #Section("Stair-negotiation", "typeStair-negotiation", 120, "0,125,230"),  # bleu vif
+        #Section("Obstacle-clearance","typeObstacle-clearance", 95,  "40,145,245"),# bleu lumineux
+        #Section("TUG",               "typeTUG",                82,  "80,165,255"),# bleu clair
+        #Section("Game",              "typeGame",               82,  "120,185,255"),# bleu doux
+        #Section("One-leg-standing",  "typeOne-leg-standing",   76,  "155,205,255"),# bleu pastel
+        #Section("Jumping",           "typeJumping",            76,  "185,220,255"),# bleu pâle
+        #Section("Stepping-target",   "typeStepping-target",    76,  "210,235,255"),# bleu très pâle
+        #Section("Other-tasks",       "typeOther-tasks",        82,  "235,245,255"),# presque blanc
+
+        Section("Sit-to-stand",      "typeSit-to-stand",      209, "90,0,140"),    # violet profond
+        Section("Running",           "typeRunning",           165, "110,20,160"),  # violet soutenu
+        Section("Cycling",           "typeCycling",           120, "130,40,180"),  # violet moyen
+        Section("Stair-negotiation", "typeStair-negotiation", 120, "150,60,200"),  # violet vif
+        Section("Obstacle-clearance","typeObstacle-clearance", 95,  "170,90,215"), # violet lumineux
+        Section("TUG",               "typeTUG",                82,  "190,120,225"),# violet clair
+        Section("Game",              "typeGame",               82,  "205,145,235"),# mauve doux
+        Section("One-leg-standing",  "typeOne-leg-standing",   76,  "220,170,245"),# lavande pastel
+        Section("Jumping",           "typeJumping",            76,  "230,190,250"),# lavande pâle
+        Section("Stepping-target",   "typeStepping-target",    76,  "240,210,255"),# mauve très pâle
+        Section("Other-tasks",       "typeOther-tasks",        82,  "250,230,255"),# presque blanc rosé
+
+
+        #Section("Squat",             "typeSquat",             10,  "vlblue"),
+        #Section("Hopping",           "typeHopping",           10,  "vlblue"),
+        #Section("GMFM-E",            "typeGMFM-E",            10,  "vvlblue"),
     ],
     out_prefix=r"C:\Circos_project\Circos_review\tasks_type"
 )
@@ -309,6 +328,11 @@ if __name__ == "__main__":
     print("\n=== Génération du fichier articles.data.txt ===")
     build_articles()
 
+    start_art_line = 0
+    end_art_line = 9
+
     for cfg in all_cfgs:
         print(f"\n=== Construction du track : {cfg.out_prefix} ===")
-        build_track(cfg)
+        build_track(cfg, start_art_line, end_art_line)
+        start_art_line = end_art_line + 1
+        end_art_line = start_art_line + 9
