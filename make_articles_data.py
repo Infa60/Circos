@@ -33,7 +33,7 @@ def normalize_ref(ref: str) -> str:
     if not s:
         return s
     if REPLACE_SPACES:
-        s = re.sub(r"[^\w\.,]", "_", s)   # garde lettres et points
+        s = re.sub(r"[^\w\.,&]", "-", s)
         s = re.sub(r"_+", "_", s)       # compresse plusieurs underscores
     return s
 

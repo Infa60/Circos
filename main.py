@@ -246,12 +246,12 @@ assessment_tools_cfg = TrackConfig(
     col_art="ArtNb",
     sections=[
         Section("Optoelectronique",       "typeOptoelectronique",       355, "40,90,40"),
-        Section("Force-plate",            "typeForce_plate",            298, "55,120,55"),
+        Section("Force-plate",            "typeForce-plate",            298, "55,120,55"),
         Section("EMG",                    "typeEMG",                    139, "70,150,70"),
-        Section("Heart-rate-monitor",       "typeHeart_rate_monitor",       108,   "90,180,90"),
-        Section("Indirect-calorimetry",     "typeIndirect_calorimetry",     108,  "120,200,120"),
+        Section("Heart-rate-monitor",       "typeHeart-rate-monitor",       108,   "90,180,90"),
+        Section("Indirect-calorimetry",     "typeIndirect-calorimetry",     108,  "120,200,120"),
         Section("IMU",                       "typeIMU",                     101,  "150,220,150"),
-        Section("Wii-fit",                  "typeWii_fit",                  76,   "180,240,180"),
+        Section("Wii-fit",                  "typeWii-fit",                  76,   "180,240,180"),
         Section("Other-tools",            "typeOther-tools",            108,  "210,255,210"),
     ],
     out_prefix=r"C:\Circos_project\Circos_review\assessment_tools"
