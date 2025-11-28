@@ -3,7 +3,7 @@ from typing import List, Dict, Tuple
 from pathlib import Path
 import pandas as pd
 import re
-from make_articles_data import main as build_articles
+from make_articles_data import generate_articles_karyotype
 from circos_conf_builder import generate_circos_conf
 
 # ==========================================
@@ -14,9 +14,10 @@ from circos_conf_builder import generate_circos_conf
 EXCEL_PATH = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
 SHEET_IDX = 0       # Index de la feuille
 COL_ART = "ArtNb"   # Nom de la colonne ID article
+COL_REF = "ref"     # Name of the Reference column
 
 # 2. PARAMÈTRES DE SORTIE
-OUTPUT_DIR = r"C:\Circos_project\Circos_review"
+OUTPUT_DIR = r"C:\Circos_project\Circos_review2"
 
 # 3. PARAMÈTRES D'ÉCHELLE (VISUALISATION)
 # Taille visuelle min/max des sections (indépendant du nombre réel d'articles)
@@ -373,6 +374,16 @@ if __name__ == "__main__":
         assessment_type_config,
         tasks_config
     ]
+
+    print("\n=== PHASE 0: Generating Articles Karyotype ===")
+    generate_articles_karyotype(
+        excel_path=EXCEL_PATH,
+        sheet_idx=SHEET_IDX,
+        output_dir=OUTPUT_DIR,
+        col_art=COL_ART,
+        col_ref=COL_REF,
+        end_value=60  # You can adjust default article size here
+    )
 
     print("\n=== PHASE 1 : Analyse Globale (Calcul des Min/Max) ===")
     all_counts = []

@@ -1,117 +1,86 @@
-"""
-Lit un Excel et écrit un fichier karyotype Circos :
-  chr -  art<ArtNb>  <ref>  0  100  black
-
-- Colonne "ref" : libellé complet (ex: "Abdolrahmani et al. 2017")
-- Colonne "ArtNb" : numéro d'article (ex: 1, 2, 3)
-
-Option : remplace les espaces et caractères spéciaux par "_"
-ex : "Abdolrahmani et al. 2017" -> "Abdolrahmani__et_al._2017"
-
-Sortie : UTF-8 (sans BOM), séparateur = tabulation.
-Tri croissant sur le numéro d’article.
-"""
-
-from pathlib import Path
+import pandas as pd
 import re
+from pathlib import Path
 
-# ========== À MODIFIER ==========
-INPUT_XLSX  = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
-SHEET_NAME  = 0
-OUTPUT_TXT  = r"C:\Circos_project\Circos_review\articles.data.txt"
-END_VALUE   = 60
-COLOR_VALUE = "black"
-COL_REF     = "ref"
-COL_ARTNB   = "ArtNb"
-REPLACE_SPACES = True
-# ================================
-
-
-def normalize_ref(ref: str) -> str:
-    """Nettoie et transforme le texte du champ ref."""
-    s = str(ref).strip()
-    if not s:
-        return s
-    if REPLACE_SPACES:
+def generate_articles_karyotype(excel_path, sheet_idx, output_dir, col_art, col_ref="ref", end_value=100):
+    """
+    Generates the articles.data.txt (Karyotype) file from the Excel data.
+    
+    Args:
+        excel_path (str): Path to the Excel file.
+        sheet_idx (int): Sheet index.
+        output_dir (str): Output directory.
+        col_art (str): Name of the Article ID column (e.g., 'ArtNb').
+        col_ref (str): Name of the Reference column (e.g., 'ref').
+        end_value (int): Visual size for each article segment (default: 100).
+    """
+    
+    # --- Internal Helper Functions ---
+    def normalize_ref(ref: str) -> str:
+        """Cleans and transforms the reference text."""
+        s = str(ref).strip()
+        if not s: return s
+        # Replace special characters with dashes/underscores for Circos safety
+        # (Though labels can contain spaces, cleaner strings avoid parsing errors)
         s = re.sub(r"[^\w\.,&]", "-", s)
-        s = re.sub(r"_+", "_", s)       # compresse plusieurs underscores
-    return s
+        s = re.sub(r"_+", "_", s)
+        return s
 
+    def art_label_from(raw) -> str:
+        """Standardizes article label to 'artN'."""
+        if raw is None: return ""
+        s = str(raw).strip()
+        if s == "": return ""
+        # Matches 'Art 1', 'art1', '1', etc.
+        m = re.match(r"^[Aa]rt\s*([0-9]+)$", s) or re.match(r"^([0-9]+)$", s)
+        if m: return f"art{m.group(1)}"
+        return s if s.lower().startswith("art") else f"art{s}"
 
-def art_label_from(raw) -> str:
-    """Construit 'artN' à partir de la valeur ArtNb."""
-    if raw is None:
-        return ""
-    s = str(raw).strip()
-    if s == "":
-        return ""
-    m = re.match(r"^[Aa]rt\s*([0-9]+)$", s)
-    if m:
-        return f"art{m.group(1)}"
-    m = re.match(r"^([0-9]+)$", s)
-    if m:
-        return f"art{m.group(1)}"
-    return s if s.lower().startswith("art") else f"art{s}"
+    def art_number(raw) -> int:
+        """Extracts integer for correct sorting (1, 2, 10 instead of 1, 10, 2)."""
+        s = str(raw).strip()
+        m = re.search(r"(\d+)", s)
+        return int(m.group(1)) if m else 999999
 
-
-def art_number(raw) -> int:
-    """Extrait le numéro d'article sous forme d'entier pour trier."""
-    s = str(raw).strip()
-    m = re.search(r"(\d+)", s)
-    return int(m.group(1)) if m else 999999  # grand nombre si non numérique
-
-
-def main():
+    # --- Main Logic ---
     try:
-        import pandas as pd
-    except ImportError:
-        raise SystemExit("Installe d'abord pandas et openpyxl :\n  pip install pandas openpyxl")
-
-    try:
-        df = pd.read_excel(
-            INPUT_XLSX,
-            sheet_name=SHEET_NAME,
-            engine="openpyxl",
-            dtype=str,
-            keep_default_na=False,
-            na_values=[]
-        )
+        df = pd.read_excel(excel_path, sheet_name=sheet_idx, engine="openpyxl")
     except Exception as e:
-        raise SystemExit(f"Erreur lecture Excel : {e}")
+        print(f"[ERROR Articles] Cannot read Excel: {e}")
+        return
 
-    df.columns = [str(c).strip() for c in df.columns]
-    for need in (COL_REF, COL_ARTNB):
-        if need not in df.columns:
-            raise SystemExit(f"Colonne manquante : '{need}'\nColonnes trouvées : {list(df.columns)}")
+    # Check columns
+    if col_art not in df.columns:
+        print(f"[ERROR Articles] Column '{col_art}' not found in Excel.")
+        return
+    
+    if col_ref not in df.columns:
+        print(f"[WARN Articles] Column '{col_ref}' not found. Using '{col_art}' as label.")
+        col_ref = col_art # Fallback
 
-    # Trie croissant sur ArtNb (numérique si possible)
-    df["__num__"] = df[COL_ARTNB].apply(art_number)
+    # Sorting
+    # Create a temporary column to sort numerically
+    df["__num__"] = df[col_art].apply(art_number)
     df = df.sort_values("__num__").drop(columns="__num__")
 
-    out_path = Path(OUTPUT_TXT)
+    # Writing
+    out_path = Path(output_dir) / "articles.data.txt"
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    lines_written = 0
-    errors = []
-
+    count = 0
     with out_path.open("w", encoding="utf-8", newline="") as fw:
         for _, row in df.iterrows():
-            ref_raw = str(row.get(COL_REF, "")).strip()
-            art = art_label_from(row.get(COL_ARTNB))
-            ref = normalize_ref(ref_raw)
-
-            if not ref or not art:
-                errors.append((row.get(COL_ARTNB, ""), row.get(COL_REF, "")))
-                continue
-
-            fw.write(f"chr -\t{art}\t{ref}\t0\t{END_VALUE}\t{COLOR_VALUE}\n")
-            lines_written += 1
-
-    print(f"✅ Fichier écrit : {out_path}")
-    print(f"   Lignes écrites : {lines_written}")
-    if errors:
-        print(f"⚠️  Lignes ignorées (ArtNb ou ref vide) : {len(errors)}")
-
-
-if __name__ == "__main__":
-    main()
+            art_label = art_label_from(row.get(col_art))
+            ref_label = normalize_ref(row.get(col_ref, ""))
+            
+            if not art_label: continue
+            
+            # Format: chr - art1 Label 0 100 black
+            # 'chr' indicates this is a chromosome definition in Circos
+            # '-' is the parent (none here)
+            # art_label is the ID used for links
+            # ref_label is the text displayed
+            fw.write(f"chr -\t{art_label}\t{ref_label}\t0\t{end_value}\tblack\n")
+            count += 1
+            
+    print(f"✅ Articles file generated: {out_path} ({count} articles)")
