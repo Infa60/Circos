@@ -17,7 +17,7 @@ COL_ART = "ArtNb"   # Nom de la colonne ID article
 COL_REF = "ref"     # Name of the Reference column
 
 # 2. PARAMÈTRES DE SORTIE
-OUTPUT_DIR = r"C:\Circos_project\Circos_review2"
+OUTPUT_DIR = r"C:\Circos_project\Circos_review"
 
 # 3. PARAMÈTRES D'ÉCHELLE (VISUALISATION)
 # Taille visuelle min/max des sections (indépendant du nombre réel d'articles)
