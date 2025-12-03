@@ -317,7 +317,7 @@ tools_config = TrackConfig(
     name="Assessment Tools",
     subdir="assessment_tools",
     sections=[
-        Section("Optoelectronique", "typeOptoelectronique", "40,90,40"),
+        Section("Optoelectronic", "typeOptoelectronic", "40,90,40"),
         Section("Force-plate", "typeForce-plate", "55,120,55"),
         Section("EMG", "typeEMG", "70,150,70"),
         Section("Heart-rate-monitor", "typeHeart-rate-monitor", "90,180,90"),
@@ -341,21 +341,41 @@ assessment_type_config = TrackConfig(
     ]
 )
 
+# tasks_config = TrackConfig(
+#     name="Task Type",
+#     subdir="tasks_type",
+#     sections=[
+#         Section("Sit-to-stand", "typeSit-to-stand", "90,0,140"),
+#         Section("Running", "typeRunning", "110,20,160"),
+#         Section("Cycling", "typeCycling", "130,40,180"),
+#         Section("Stair-negotiation", "typeStair-negotiation", "150,60,200"),
+#         Section("Obstacle-clearance", "typeObstacle-clearance", "170,90,215"),
+#         Section("Time-Up-and-Go", "typeTime-Up-and-Go", "190,120,225"),
+#         Section("Game", "typeGame", "205,145,235"),
+#         Section("One-leg-standing", "typeOne-leg-standing", "220,170,245"),
+#         Section("Jumping", "typeJumping", "230,190,250"),
+#         Section("Stepping-target", "typeStepping-target", "240,210,255"),
+#         Section("Other-tasks", "typeOther-tasks", "250,230,255"),
+#     ]
+# )
+
 tasks_config = TrackConfig(
     name="Task Type",
     subdir="tasks_type",
     sections=[
-        Section("Sit-to-stand", "typeSit-to-stand", "90,0,140"),
-        Section("Running", "typeRunning", "110,20,160"),
-        Section("Cycling", "typeCycling", "130,40,180"),
-        Section("Stair-negotiation", "typeStair-negotiation", "150,60,200"),
-        Section("Obstacle-clearance", "typeObstacle-clearance", "170,90,215"),
-        Section("TUG", "typeTUG", "190,120,225"),
-        Section("Game", "typeGame", "205,145,235"),
-        Section("One-leg-standing", "typeOne-leg-standing", "220,170,245"),
-        Section("Jumping", "typeJumping", "230,190,250"),
-        Section("Stepping-target", "typeStepping-target", "240,210,255"),
-        Section("Other-tasks", "typeOther-tasks", "250,230,255"),
+        Section("Sit-to-stand", "typeSit-to-stand", "50,0,80"),
+        Section("Running", "typeRunning", "65,10,95"),
+        Section("Cycling", "typeCycling", "80,20,110"),
+        Section("Stair-negotiation", "typeStair-negotiation", "95,30,125"),
+        Section("Obstacle-clearance", "typeObstacle-clearance", "110,40,140"),
+        Section("Game", "typeGame", "125,55,155"),
+        Section("Jumping", "typeJumping", "140,70,170"),
+        Section("Time-Up-and-Go", "typeTime-Up-and-Go", "160,90,185"),
+        Section("One-leg-standing", "typeOne-leg-standing", "180,110,200"),
+        Section("Stepping-target", "typeStepping-target", "200,135,210"),
+        Section("Hopping", "typeHopping", "220,160,220"),
+        Section("Squat", "typeSquat", "240,190,230"),
+        Section("Kicking-a-ball", "typeKicking-a-ball", "255,220,240"),
     ]
 )
 
