@@ -3,7 +3,7 @@ from typing import List, Dict, Tuple
 from pathlib import Path
 import pandas as pd
 import re
-from make_articles_data import generate_articles_karyotype
+from circos_make_articles_data import generate_articles_karyotype
 from circos_conf_builder import generate_circos_conf
 
 # ==========================================
