@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Circos.iml" filepath="$PROJECT_DIR$/.idea/Circos.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Review_with_circos.iml" filepath="$PROJECT_DIR$/.idea/Review_with_circos.iml" />
     </modules>
   </component>
 </project>
