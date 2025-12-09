@@ -303,9 +303,9 @@ cp_type_config = TrackConfig(
 )
 
 laterality_config = TrackConfig(
-    name="Laterality",
-    subdir="cp_laterality",
-    special_na=("typeLaterality-Unspecified", "255,230,80"),
+    name="Topography",
+    subdir="cp_topography",
+    special_na=("typeUnspecified_Topography", "255,230,80"),
     sections=[
         Section("Hemiplegic", "typeHemiplegic", "150,120,0"),
         Section("Diplegic", "typeDiplegic", "200,160,0"),
