@@ -23,7 +23,7 @@ def generate_circos_conf(output_dir, active_tracks, boundary_map, main_article_f
         type           = text
         file           = {t.subdir}.numbers.txt
         r1             = 1200p
-        r0             = 705p
+        r0             = 710p
         label_font     = bold
         label_size     = 20p
         label_parallel = no

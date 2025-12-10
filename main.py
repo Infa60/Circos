@@ -305,7 +305,7 @@ cp_type_config = TrackConfig(
 laterality_config = TrackConfig(
     name="Topography",
     subdir="cp_topography",
-    special_na=("typeUnspecified_Topography", "255,230,80"),
+    special_na=("typeUnspecified-Topography", "255,230,80"),
     sections=[
         Section("Hemiplegic", "typeHemiplegic", "150,120,0"),
         Section("Diplegic", "typeDiplegic", "200,160,0"),
@@ -321,7 +321,7 @@ tools_config = TrackConfig(
         Section("Force-plate", "typeForce-plate", "55,120,55"),
         Section("EMG", "typeEMG", "70,150,70"),
         Section("Heart-rate-monitor", "typeHeart-rate-monitor", "90,180,90"),
-        Section("Indirect-calorimetry", "typeIndirect-calorimetry", "120,200,120"),
+        Section("Metabolic-cart", "typeMetabolic-cart", "120,200,120"),
         Section("IMU", "typeIMU", "150,220,150"),
         Section("Wii-fit", "typeWii-fit", "180,240,180"),
         Section("Other-tools", "typeOther-tools", "210,255,210"),
