@@ -17,7 +17,7 @@ COL_ART = "ArtNb"   # Nom de la colonne ID article
 COL_REF = "ref"     # Name of the Reference column
 
 # 2. PARAMÈTRES DE SORTIE
-OUTPUT_DIR = r"C:\Circos_project\Circos_review"
+OUTPUT_DIR = r"C:\Circos_project\Circos_review2"
 
 # 3. PARAMÈTRES D'ÉCHELLE (VISUALISATION)
 # Taille visuelle min/max des sections (indépendant du nombre réel d'articles)
@@ -338,6 +338,8 @@ assessment_type_config = TrackConfig(
         Section("Stability", "typeStability", "90,170,240"),
         Section("Electromyographic", "typeElectromyographic", "120,190,250"),
         Section("Metabolic", "typeMetabolic", "170,215,255"),
+        Section("Score", "typeScore", "210,235,255"),
+
     ]
 )
 
