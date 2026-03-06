@@ -10,14 +10,14 @@ It is designed to visualize the relationships between research articles and expe
 ## Prerequisites
 
 Before running the scripts, ensure you have the following installed in your Python environment:
-* `pandas` (for data manipulation)
-* `openpyxl` (for reading/writing Excel files)
+* `pandas` 
+* `openpyxl`
 * *Circos* (installed separately on your system to render the generated configuration files)
 
 ### Installing Circos (Windows)
 Circos is a command-line application written in Perl. It does not have a standard Windows installer, so follow these steps to set it up:
 
-1. **Install a Perl Interpreter:** Download and install [Strawberry Perl](https://strawberryperl.com/) (recommended for Windows).
+1. **Install a Perl Interpreter:** Download and install [Strawberry Perl](https://strawberryperl.com/).
 2. **Download Circos:** Visit the [Circos Download Page](http://circos.ca/software/download/circos/) and download the `.tgz` archive (e.g., `circos-0.69-10.tgz`).
 3. **Verify Perl Modules:**
    ```cmd
