@@ -1,26 +1,4 @@
-"""
-Lit un Excel (.xlsx) avec colonnes:
-  - ArtNb
-  - Hemiplegic, Diplegic, Quadriplegic, mixte
 
-RÈGLES PAR CELLULE :
-- "0" (ou 0.0, 0,00) -> ne rien écrire.
-- "???" -> écrire une ligne sous typeLateralityNA (Y=170, color=lyellow) pour cette cellule (pas de typeHemiplegic..IV).
-- "X" ou toute valeur != 0 -> écrire sous le type de la colonne :
-    Hemiplegic -> typeHemiplegic   (Y=280, color=vvdyellow)
-    Diplegic -> typeDiplegic  (Y=470, color=vdyellow)
-    Quadriplegic -> typeQuadriplegic (Y=170, color=dyellow)
-    mixte -> typeMixte  (Y=170, color=yellow)
-- Cellule vide -> reporter en # ERRORS.
-
-Sortie TXT (UTF-8 BOM) groupée par sections :
-  # typeHemiplegic
-  # typeDiplegic
-  # typeQuadriplegic
-  # typeMixte
-  # typeLateralityNA
-  # ERRORS
-"""
 
 from pathlib import Path
 import re

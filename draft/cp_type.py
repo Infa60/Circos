@@ -1,26 +1,4 @@
-"""
-Lit un Excel (.xlsx) avec colonnes:
-  - ArtNb
-  - spastic, ataxic, dyskinetic, mixte
 
-RÈGLES PAR CELLULE :
-- "0" (ou 0.0, 0,00) -> ne rien écrire.
-- "???" -> écrire une ligne sous typeCPNA (Y=170, color=lorange) pour cette cellule (pas de typeSpastic..IV).
-- "X" ou toute valeur != 0 -> écrire sous le type de la colonne :
-    spastic -> typeSpastic   (Y=280, color=vvdorange)
-    ataxic -> typeAtaxic  (Y=470, color=vdorange)
-    dyskinetic -> typeDyskinetic (Y=170, color=dorange)
-    mixte -> typeMixte  (Y=170, color=orange)
-- Cellule vide -> reporter en # ERRORS.
-
-Sortie TXT (UTF-8 BOM) groupée par sections :
-  # typeSpastic
-  # typeAtaxic
-  # typeDyskinetic
-  # typeMixte
-  # typeCPNA
-  # ERRORS
-"""
 
 from pathlib import Path
 import re

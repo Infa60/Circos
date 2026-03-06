@@ -1,26 +1,3 @@
-"""
-Lit un Excel (.xlsx) avec colonnes:
-  - ArtNb
-  - GMFCS 1, GMFCS 2, GMFCS 3, GMFCS 4
-
-RÈGLES PAR CELLULE :
-- "0" (ou 0.0, 0,00) -> ne rien écrire.
-- "???" -> écrire une ligne sous typeNA (Y=170, color=lred) pour cette cellule (pas de typeI..IV).
-- "X" ou toute valeur != 0 -> écrire sous le type de la colonne :
-    GMFCS 1 -> typeI   (Y=280, color=vvdred)
-    GMFCS 2 -> typeII  (Y=470, color=vdred)
-    GMFCS 3 -> typeIII (Y=170, color=dred)
-    GMFCS 4 -> typeIV  (Y=170, color=red)
-- Cellule vide -> reporter en # ERRORS.
-
-Sortie TXT (UTF-8 BOM) groupée par sections :
-  # typeI
-  # typeII
-  # typeIII
-  # typeIV
-  # typeNA
-  # ERRORS
-"""
 
 from pathlib import Path
 import re
