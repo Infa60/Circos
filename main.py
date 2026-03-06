@@ -49,9 +49,9 @@ from circos_conf_builder import generate_circos_conf
 
 # 1. EXCEL FILE PARAMETERS
 EXCEL_PATH = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
-SHEET_IDX = 0       # Sheet index
-COL_ART = "ArtNb"   # Article ID column name
-COL_REF = "ref"     # Reference column name
+SHEET_IDX = 0  # Sheet index
+COL_ART = "ArtNb"  # Article ID column name
+COL_REF = "ref"  # Reference column name
 
 # 2. OUTPUT PARAMETERS
 OUTPUT_DIR = r"C:\Circos_project\Circos_review2"
@@ -66,18 +66,22 @@ VISUAL_MAX_SIZE = 400
 #           CLASSES & UTILITIES
 # ==========================================
 
+
 def as_art_label(raw) -> str:
     """Normalizes the article ID -> 'artNN'."""
     s = "" if raw is None else str(raw).strip()
-    if s == "": return ""
+    if s == "":
+        return ""
     m = re.match(r"^[Aa]rt\s*([0-9]+)$", s) or re.match(r"^([0-9]+)$", s)
-    if m: return f"art{m.group(1)}"
+    if m:
+        return f"art{m.group(1)}"
     return s if s.lower().startswith("art") else f"art{s}"
 
 
 def is_zero_like(val) -> bool:
     """Returns True if the value is 0 or empty."""
-    if val is None: return False
+    if val is None:
+        return False
     try:
         return float(str(val).strip().replace(",", ".")) == 0.0
     except:
@@ -90,8 +94,8 @@ NA_TOKENS = {"", "na", "n/a", "nan", "-", "--", "?", "??"}
 @dataclass
 class Section:
     excel_col: str  # Excel column name
-    tlabel: str     # Circos identifier
-    color: str      # RGB Color
+    tlabel: str  # Circos identifier
+    color: str  # RGB Color
 
 
 @dataclass
@@ -113,6 +117,7 @@ class TrackConfig:
 # ==========================================
 #           GENERATION ENGINE
 # ==========================================
+
 
 def get_article_boundaries():
     """Finds the first and last article (e.g., art1, art53)."""
@@ -146,7 +151,8 @@ def get_counts_for_config(cfg: TrackConfig) -> Dict[str, int]:
     tlabel_na = None
     if cfg.special_na:
         tlabel_na = cfg.special_na[0]
-        if tlabel_na not in sections_order: sections_order.append(tlabel_na)
+        if tlabel_na not in sections_order:
+            sections_order.append(tlabel_na)
 
     try:
         df = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_IDX, engine="openpyxl")
@@ -159,27 +165,33 @@ def get_counts_for_config(cfg: TrackConfig) -> Dict[str, int]:
 
     for _, row in df.iterrows():
         art = as_art_label(row.get(COL_ART))
-        if not art: continue
+        if not art:
+            continue
 
         for col in cols_to_check:
             val = row.get(col)
-            if val is None or (isinstance(val, float) and pd.isna(val)): continue
+            if val is None or (isinstance(val, float) and pd.isna(val)):
+                continue
             sval = str(val).strip()
             low = sval.lower()
 
             if low == "???":
-                if cfg.special_na: bucket[tlabel_na].append(art)
+                if cfg.special_na:
+                    bucket[tlabel_na].append(art)
                 continue
 
-            if (isinstance(val, str) and low in NA_TOKENS): continue
-            if is_zero_like(sval): continue
+            if isinstance(val, str) and low in NA_TOKENS:
+                continue
+            if is_zero_like(sval):
+                continue
 
             tlabel = section_map[col]
             bucket[tlabel].append(art)
 
     counts = {}
     for t in sections_order:
-        if cfg.dedup: bucket[t] = list(dict.fromkeys(bucket[t]))
+        if cfg.dedup:
+            bucket[t] = list(dict.fromkeys(bucket[t]))
         counts[t] = len(bucket[t])
 
     return counts
@@ -194,7 +206,8 @@ def build_track(cfg: TrackConfig, start_line, end_line, global_min, global_max):
     tlabel_na, color_na = (None, None)
     if cfg.special_na:
         tlabel_na, color_na = cfg.special_na
-        if tlabel_na not in sections_order: sections_order.append(tlabel_na)
+        if tlabel_na not in sections_order:
+            sections_order.append(tlabel_na)
 
     df = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_IDX, engine="openpyxl")
     cols_to_check = [s.excel_col for s in cfg.sections]
@@ -206,13 +219,15 @@ def build_track(cfg: TrackConfig, start_line, end_line, global_min, global_max):
     for _, row in df.iterrows():
         art = as_art_label(row.get(COL_ART))
         if not art:
-            if cfg.treat_empty_as_error: errors.append(("(empty art)", COL_ART))
+            if cfg.treat_empty_as_error:
+                errors.append(("(empty art)", COL_ART))
             continue
 
         for col in cols_to_check:
             val = row.get(col)
             if val is None or (isinstance(val, float) and pd.isna(val)):
-                if cfg.treat_empty_as_error: errors.append((art, col))
+                if cfg.treat_empty_as_error:
+                    errors.append((art, col))
                 continue
 
             sval = str(val).strip()
@@ -221,26 +236,33 @@ def build_track(cfg: TrackConfig, start_line, end_line, global_min, global_max):
             if low == "???":
                 if cfg.special_na:
                     bucket[tlabel_na].append(
-                        f"{art}\t{start_line}\t{end_line}\t{tlabel_na}\t0\tSIZE_PLACEHOLDER\tcolor={color_na}")
+                        f"{art}\t{start_line}\t{end_line}\t{tlabel_na}\t0\tSIZE_PLACEHOLDER\tcolor={color_na}"
+                    )
                 elif cfg.treat_empty_as_error:
                     errors.append((art, col))
                 continue
 
-            if (isinstance(val, str) and low in NA_TOKENS):
-                if cfg.treat_empty_as_error: errors.append((art, col))
+            if isinstance(val, str) and low in NA_TOKENS:
+                if cfg.treat_empty_as_error:
+                    errors.append((art, col))
                 continue
-            if is_zero_like(sval): continue
+            if is_zero_like(sval):
+                continue
 
             tlabel, color = section_map[col]
-            bucket[tlabel].append(f"{art}\t{start_line}\t{end_line}\t{tlabel}\t0\tSIZE_PLACEHOLDER\tcolor={color}")
+            bucket[tlabel].append(
+                f"{art}\t{start_line}\t{end_line}\t{tlabel}\t0\tSIZE_PLACEHOLDER\tcolor={color}"
+            )
 
     # 2. Calculations & Sorting
     real_counts = {}
     for t in sections_order:
-        if cfg.dedup: bucket[t] = list(dict.fromkeys(bucket[t]))
+        if cfg.dedup:
+            bucket[t] = list(dict.fromkeys(bucket[t]))
         if cfg.sort_in_section:
+
             def art_key(line: str):
-                parts = line.split('\t')
+                parts = line.split("\t")
                 a = parts[0]
                 m = re.match(r"^art(\d+)", a)
                 return (0, int(m.group(1))) if m else (1, a.lower())
@@ -263,8 +285,12 @@ def build_track(cfg: TrackConfig, start_line, end_line, global_min, global_max):
         if global_max == global_min:
             scaled_size = VISUAL_MAX_SIZE
         else:
-            scaled_size = int(VISUAL_MIN_SIZE + (count - global_min) * (VISUAL_MAX_SIZE - VISUAL_MIN_SIZE) / (
-                        global_max - global_min))
+            scaled_size = int(
+                VISUAL_MIN_SIZE
+                + (count - global_min)
+                * (VISUAL_MAX_SIZE - VISUAL_MIN_SIZE)
+                / (global_max - global_min)
+            )
 
         scaled_sizes[t] = scaled_size
 
@@ -283,12 +309,14 @@ def build_track(cfg: TrackConfig, start_line, end_line, global_min, global_max):
 
     with f_links.open("w", encoding="utf-8", newline="") as fw:
         for t in sections_order:
-            if not bucket[t]: continue
+            if not bucket[t]:
+                continue
             fw.write(f"# {t} (Real: {real_counts[t]}, Scaled: {scaled_sizes[t]})\n")
             fw.writelines(line + "\n" for line in bucket[t])
         if errors:
             fw.write("\n# ERRORS\n")
-            for art, col in errors: fw.write(f"{art}\t{col}\t<empty>\n")
+            for art, col in errors:
+                fw.write(f"{art}\t{col}\t<empty>\n")
 
     with f_nums.open("w", encoding="utf-8", newline="") as fw:
         for t in sections_order:
@@ -297,11 +325,15 @@ def build_track(cfg: TrackConfig, start_line, end_line, global_min, global_max):
 
     with f_data.open("w", encoding="utf-8", newline="") as fw:
         fw.write("# chr - CHRNAME CHRLABEL START END COLOR\n")
-        meta_info = {s.tlabel: (s.tlabel.replace("type", ""), s.color) for s in cfg.sections}
-        if cfg.special_na: meta_info[tlabel_na] = (tlabel_na.replace("type", ""), color_na)
+        meta_info = {
+            s.tlabel: (s.tlabel.replace("type", ""), s.color) for s in cfg.sections
+        }
+        if cfg.special_na:
+            meta_info[tlabel_na] = (tlabel_na.replace("type", ""), color_na)
 
         for t in sections_order:
-            if t not in meta_info or scaled_sizes[t] == 0: continue
+            if t not in meta_info or scaled_sizes[t] == 0:
+                continue
             pretty, color = meta_info[t]
             fw.write(f"chr -\t{t}\t{pretty}\t0\t{scaled_sizes[t]}\t{color}\n")
 
@@ -324,7 +356,7 @@ gmfcs_config = TrackConfig(
         Section("GMFCS-II", "typeGMFCS-II", "160,20,20"),
         Section("GMFCS-III", "typeGMFCS-III", "200,40,40"),
         Section("GMFCS-IV", "typeGMFCS-IV", "230,80,80"),
-    ]
+    ],
 )
 
 cp_type_config = TrackConfig(
@@ -336,7 +368,7 @@ cp_type_config = TrackConfig(
         Section("Dyskinetic", "typeDyskinetic", "165,60,0"),
         Section("Ataxic", "typeAtaxic", "210,85,0"),
         Section("Mixed", "typeMixed", "240,120,30"),
-    ]
+    ],
 )
 
 laterality_config = TrackConfig(
@@ -347,7 +379,7 @@ laterality_config = TrackConfig(
         Section("Hemiplegic", "typeHemiplegic", "150,120,0"),
         Section("Diplegic", "typeDiplegic", "200,160,0"),
         Section("Quadriplegic", "typeQuadriplegic", "240,200,20"),
-    ]
+    ],
 )
 
 tools_config = TrackConfig(
@@ -362,7 +394,7 @@ tools_config = TrackConfig(
         Section("IMU", "typeIMU", "150,220,150"),
         Section("Wii-fit", "typeWii-fit", "180,240,180"),
         Section("Other-tools", "typeOther-tools", "210,255,210"),
-    ]
+    ],
 )
 
 assessment_type_config = TrackConfig(
@@ -376,8 +408,7 @@ assessment_type_config = TrackConfig(
         Section("Electromyographic", "typeElectromyographic", "120,190,250"),
         Section("Metabolic", "typeMetabolic", "170,215,255"),
         Section("Score", "typeScore", "210,235,255"),
-
-    ]
+    ],
 )
 
 # tasks_config = TrackConfig(
@@ -415,7 +446,7 @@ tasks_config = TrackConfig(
         Section("Hopping", "typeHopping", "220,160,220"),
         Section("Squat", "typeSquat", "240,190,230"),
         Section("Kicking-a-ball", "typeKicking-a-ball", "255,220,240"),
-    ]
+    ],
 )
 
 # ==========================================
@@ -431,7 +462,7 @@ if __name__ == "__main__":
         laterality_config,
         tools_config,
         assessment_type_config,
-        tasks_config
+        tasks_config,
     ]
 
     print("\n=== PHASE 0: Generating Articles Karyotype ===")
@@ -441,7 +472,7 @@ if __name__ == "__main__":
         output_dir=OUTPUT_DIR,
         col_art=COL_ART,
         col_ref=COL_REF,
-        end_value=60  # You can adjust default article size here
+        end_value=60,  # You can adjust default article size here
     )
 
     print("\n=== PHASE 1: Global Analysis (Min/Max Calculation) ===")
@@ -470,7 +501,7 @@ if __name__ == "__main__":
     first_art, last_art = get_article_boundaries()
     if first_art:
         print(f"Articles: {first_art} -> {last_art}")
-        boundary_map['articles'] = (first_art, last_art)
+        boundary_map["articles"] = (first_art, last_art)
 
     # Track Boundaries
     start_art_line = 0
@@ -478,7 +509,9 @@ if __name__ == "__main__":
 
     for cfg in ACTIVE_TRACKS:
         print(f"Processing: {cfg.name}")
-        first_lbl, last_lbl = build_track(cfg, start_art_line, end_art_line, GLOBAL_MIN, GLOBAL_MAX)
+        first_lbl, last_lbl = build_track(
+            cfg, start_art_line, end_art_line, GLOBAL_MIN, GLOBAL_MAX
+        )
 
         if first_lbl and last_lbl:
             boundary_map[cfg.subdir] = (first_lbl, last_lbl)
@@ -488,9 +521,7 @@ if __name__ == "__main__":
 
     print("\n=== PHASE 3: Automatic creation of circos.conf ===")
     generate_circos_conf(
-        output_dir=OUTPUT_DIR,
-        active_tracks=ACTIVE_TRACKS,
-        boundary_map=boundary_map
+        output_dir=OUTPUT_DIR, active_tracks=ACTIVE_TRACKS, boundary_map=boundary_map
     )
 
     print("\n✅ Completed successfully.")

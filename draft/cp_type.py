@@ -1,12 +1,10 @@
-
-
 from pathlib import Path
 import re
 
 # ========== CONFIG ==========
-INPUT_XLSX   = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
-SHEET_NAME   = 0
-OUTPUT_TXT   = r"C:\Circos_project\Circos_review\cp_type.links.txt"
+INPUT_XLSX = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
+SHEET_NAME = 0
+OUTPUT_TXT = r"C:\Circos_project\Circos_review\cp_type.links.txt"
 OUTPUT_SUMMARY = r"C:\Circos_project\Circos_review\cp_type.numbers.txt"
 OUTPUT_CHR = r"C:\Circos_project\Circos_review\cp_type.data.txt"
 
@@ -19,22 +17,29 @@ COL_ART = "ArtNb"
 GMFCS_COLS = ["Spastic", "Ataxic", "Dyskinetic", "Mixte"]
 
 SECTION_MAP = {
-    "Spastic": ("typeSpastic",   Y1, "vvdorange"),
-    "Ataxic": ("typeAtaxic",  Y2, "vdorange"),
+    "Spastic": ("typeSpastic", Y1, "vvdorange"),
+    "Ataxic": ("typeAtaxic", Y2, "vdorange"),
     "Dyskinetic": ("typeDyskinetic", Y3, "dorange"),
-    "Mixte": ("typeMixte",  Y4, "orange"),
+    "Mixte": ("typeMixte", Y4, "orange"),
 }
 TYPE_NA = ("typeCPNA", YNA, "lorange")
-SECTIONS_ORDER = ["typeSpastic", "typeAtaxic", "typeDyskinetic", "typeMixte", "typeCPNA"]
+SECTIONS_ORDER = [
+    "typeSpastic",
+    "typeAtaxic",
+    "typeDyskinetic",
+    "typeMixte",
+    "typeCPNA",
+]
 
 # Coordonnées pour le résumé
 SUMMARY_Y = {
-    "typeSpastic":   Y1,
-    "typeAtaxic":  Y2,
+    "typeSpastic": Y1,
+    "typeAtaxic": Y2,
     "typeDyskinetic": Y3,
-    "typeMixte":  Y4,
-    "typeCPNA":  YNA,
+    "typeMixte": Y4,
+    "typeCPNA": YNA,
 }
+
 
 def as_art_label(raw) -> str:
     s = "" if raw is None else str(raw).strip()
@@ -48,6 +53,7 @@ def as_art_label(raw) -> str:
         return f"art{m.group(1)}"
     return s if s.lower().startswith("art") else f"art{s}"
 
+
 def is_zero_like(s: str) -> bool:
     txt = s.strip().replace(",", ".")
     try:
@@ -55,11 +61,14 @@ def is_zero_like(s: str) -> bool:
     except ValueError:
         return False
 
+
 def main():
     try:
         import pandas as pd
     except ImportError:
-        raise SystemExit("Ce script requiert pandas et openpyxl.\nInstalle :  pip install pandas openpyxl")
+        raise SystemExit(
+            "Ce script requiert pandas et openpyxl.\nInstalle :  pip install pandas openpyxl"
+        )
     try:
         df = pd.read_excel(INPUT_XLSX, sheet_name=SHEET_NAME, engine="openpyxl")
     except Exception as e:
@@ -67,7 +76,9 @@ def main():
 
     missing = [c for c in [COL_ART] + GMFCS_COLS if c not in df.columns]
     if missing:
-        raise SystemExit(f"Colonnes manquantes : {missing}\nColonnes trouvées : {list(df.columns)}")
+        raise SystemExit(
+            f"Colonnes manquantes : {missing}\nColonnes trouvées : {list(df.columns)}"
+        )
 
     bucket = {sec: [] for sec in SECTIONS_ORDER}
     errors = []
@@ -108,9 +119,11 @@ def main():
 
     # Tri
     if SORT_WITHIN_SECTIONS:
+
         def art_key(line: str):
             m = re.match(r"^art(\d+)", line)
             return (0, int(m.group(1))) if m else (1, line.lower())
+
         for sec in SECTIONS_ORDER:
             bucket[sec] = sorted(bucket[sec], key=art_key)
 
@@ -160,7 +173,7 @@ def main():
     color_IV = SECTION_MAP["Mixte"][2]  # orange
     color_NA = TYPE_NA[2]  # lorange
 
-    #with out_chr.open("w", encoding="utf-8-sig", newline="") as fw:
+    # with out_chr.open("w", encoding="utf-8-sig", newline="") as fw:
     with out_chr.open("w", encoding="utf-8", newline="") as fw:
         fw.write("# chr - CHRNAME CHRLABEL START END COLOR\n")
         fw.write(f"chr -\ttypeSpastic\tSpastic\t0\t{Y1}\t{color_I}\n")
@@ -173,6 +186,7 @@ def main():
 
     if errors:
         print(f"⚠️  {len(errors)} cellules vides signalées (voir section # ERRORS)")
+
 
 if __name__ == "__main__":
     main()

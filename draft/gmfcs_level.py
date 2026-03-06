@@ -1,11 +1,10 @@
-
 from pathlib import Path
 import re
 
 # ========== CONFIG ==========
-INPUT_XLSX   = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
-SHEET_NAME   = 0
-OUTPUT_TXT   = r"C:\Circos_project\Circos_review\gmfcs_level.links.txt"
+INPUT_XLSX = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
+SHEET_NAME = 0
+OUTPUT_TXT = r"C:\Circos_project\Circos_review\gmfcs_level.links.txt"
 OUTPUT_SUMMARY = r"C:\Circos_project\Circos_review\gmfcs_level.numbers.txt"
 OUTPUT_CHR = r"C:\Circos_project\Circos_review\gmfcs_level.data.txt"
 
@@ -18,22 +17,23 @@ COL_ART = "ArtNb"
 GMFCS_COLS = ["GMFCS 1", "GMFCS 2", "GMFCS 3", "GMFCS 4"]
 
 SECTION_MAP = {
-    "GMFCS 1": ("typeI",   Y1, "vvdred"),
-    "GMFCS 2": ("typeII",  Y2, "vdred"),
+    "GMFCS 1": ("typeI", Y1, "vvdred"),
+    "GMFCS 2": ("typeII", Y2, "vdred"),
     "GMFCS 3": ("typeIII", Y3, "dred"),
-    "GMFCS 4": ("typeIV",  Y4, "red"),
+    "GMFCS 4": ("typeIV", Y4, "red"),
 }
 TYPE_NA = ("typeNA", YNA, "lred")
 SECTIONS_ORDER = ["typeI", "typeII", "typeIII", "typeIV", "typeNA"]
 
 # Coordonnées pour le résumé
 SUMMARY_Y = {
-    "typeI":   Y1,
-    "typeII":  Y2,
+    "typeI": Y1,
+    "typeII": Y2,
     "typeIII": Y3,
-    "typeIV":  Y4,
-    "typeNA":  YNA,
+    "typeIV": Y4,
+    "typeNA": YNA,
 }
+
 
 def as_art_label(raw) -> str:
     s = "" if raw is None else str(raw).strip()
@@ -47,6 +47,7 @@ def as_art_label(raw) -> str:
         return f"art{m.group(1)}"
     return s if s.lower().startswith("art") else f"art{s}"
 
+
 def is_zero_like(s: str) -> bool:
     txt = s.strip().replace(",", ".")
     try:
@@ -54,11 +55,14 @@ def is_zero_like(s: str) -> bool:
     except ValueError:
         return False
 
+
 def main():
     try:
         import pandas as pd
     except ImportError:
-        raise SystemExit("Ce script requiert pandas et openpyxl.\nInstalle :  pip install pandas openpyxl")
+        raise SystemExit(
+            "Ce script requiert pandas et openpyxl.\nInstalle :  pip install pandas openpyxl"
+        )
     try:
         df = pd.read_excel(INPUT_XLSX, sheet_name=SHEET_NAME, engine="openpyxl")
     except Exception as e:
@@ -66,7 +70,9 @@ def main():
 
     missing = [c for c in [COL_ART] + GMFCS_COLS if c not in df.columns]
     if missing:
-        raise SystemExit(f"Colonnes manquantes : {missing}\nColonnes trouvées : {list(df.columns)}")
+        raise SystemExit(
+            f"Colonnes manquantes : {missing}\nColonnes trouvées : {list(df.columns)}"
+        )
 
     bucket = {sec: [] for sec in SECTIONS_ORDER}
     errors = []
@@ -107,9 +113,11 @@ def main():
 
     # Tri
     if SORT_WITHIN_SECTIONS:
+
         def art_key(line: str):
             m = re.match(r"^art(\d+)", line)
             return (0, int(m.group(1))) if m else (1, line.lower())
+
         for sec in SECTIONS_ORDER:
             bucket[sec] = sorted(bucket[sec], key=art_key)
 
@@ -159,7 +167,7 @@ def main():
     color_IV = SECTION_MAP["GMFCS 4"][2]  # red
     color_NA = TYPE_NA[2]  # lred
 
-    #with out_chr.open("w", encoding="utf-8-sig", newline="") as fw:
+    # with out_chr.open("w", encoding="utf-8-sig", newline="") as fw:
     with out_chr.open("w", encoding="utf-8", newline="") as fw:
         fw.write("# chr - CHRNAME CHRLABEL START END COLOR\n")
         fw.write(f"chr -\ttypeI\tI\t0\t{Y1}\t{color_I}\n")
@@ -172,6 +180,7 @@ def main():
 
     if errors:
         print(f"⚠️  {len(errors)} cellules vides signalées (voir section # ERRORS)")
+
 
 if __name__ == "__main__":
     main()

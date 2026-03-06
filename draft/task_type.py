@@ -1,23 +1,47 @@
-
-
 from pathlib import Path
 import re
 
 # ========== CONFIG ==========
-INPUT_XLSX   = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
-SHEET_NAME   = 0
-OUTPUT_TXT   = r"C:\Circos_project\Circos_review\tasks_type.links.txt"
+INPUT_XLSX = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
+SHEET_NAME = 0
+OUTPUT_TXT = r"C:\Circos_project\Circos_review\tasks_type.links.txt"
 OUTPUT_SUMMARY = r"C:\Circos_project\Circos_review\tasks_type.numbers.txt"
 OUTPUT_CHR = r"C:\Circos_project\Circos_review\tasks_type.data.txt"
 
 SORT_WITHIN_SECTIONS = True
 DEDUP_WITHIN_SECTIONS = True
-Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9, Y10, Y11, Y12, Y13 = 230, 160, 100, 90, 50, 30, 30, 20, 20, 20, 10, 10, 10
+Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9, Y10, Y11, Y12, Y13 = (
+    230,
+    160,
+    100,
+    90,
+    50,
+    30,
+    30,
+    20,
+    20,
+    20,
+    10,
+    10,
+    10,
+)
 # ============================
 
 COL_ART = "ArtNb"
-GMFCS_COLS = ["Sit-to-stand", "Running", "Cycling", "Stair-negotiation", "Obstacle-clearance", "TUG",
-              "Game", "One-leg-standing", "Jumping", "Stepping-target", "Squat", "Hopping", "GMFM-E"
+GMFCS_COLS = [
+    "Sit-to-stand",
+    "Running",
+    "Cycling",
+    "Stair-negotiation",
+    "Obstacle-clearance",
+    "TUG",
+    "Game",
+    "One-leg-standing",
+    "Jumping",
+    "Stepping-target",
+    "Squat",
+    "Hopping",
+    "GMFM-E",
 ]
 
 SECTION_MAP = {
@@ -36,16 +60,28 @@ SECTION_MAP = {
     "GMFM-E": ("typeGMFM-E", Y13, "vvlblue"),
 }
 
-SECTIONS_ORDER = ["typeSit-to-stand", "typeRunning", "typeCycling", "typeStair-negotiation",
-                  "typeObstacle-clearance", "typeTUG", "typeGame", "typeOne-leg-standing", "typeJumping",
-                  "typeStepping-target", "typeSquat", "typeHopping", "typeGMFM-E"]
+SECTIONS_ORDER = [
+    "typeSit-to-stand",
+    "typeRunning",
+    "typeCycling",
+    "typeStair-negotiation",
+    "typeObstacle-clearance",
+    "typeTUG",
+    "typeGame",
+    "typeOne-leg-standing",
+    "typeJumping",
+    "typeStepping-target",
+    "typeSquat",
+    "typeHopping",
+    "typeGMFM-E",
+]
 
 # Coordonnées pour le résumé
 SUMMARY_Y = {
-    "typeSit-to-stand":   Y1,
-    "typeRunning":  Y2,
+    "typeSit-to-stand": Y1,
+    "typeRunning": Y2,
     "typeCycling": Y3,
-    "typeStair-negotiation":  Y4,
+    "typeStair-negotiation": Y4,
     "typeObstacle-clearance": Y5,
     "typeTUG": Y6,
     "typeGame": Y7,
@@ -56,6 +92,7 @@ SUMMARY_Y = {
     "typeHopping": Y12,
     "typeGMFM-E": Y13,
 }
+
 
 def as_art_label(raw) -> str:
     s = "" if raw is None else str(raw).strip()
@@ -69,6 +106,7 @@ def as_art_label(raw) -> str:
         return f"art{m.group(1)}"
     return s if s.lower().startswith("art") else f"art{s}"
 
+
 def is_zero_like(s: str) -> bool:
     txt = s.strip().replace(",", ".")
     try:
@@ -76,11 +114,14 @@ def is_zero_like(s: str) -> bool:
     except ValueError:
         return False
 
+
 def main():
     try:
         import pandas as pd
     except ImportError:
-        raise SystemExit("Ce script requiert pandas et openpyxl.\nInstalle :  pip install pandas openpyxl")
+        raise SystemExit(
+            "Ce script requiert pandas et openpyxl.\nInstalle :  pip install pandas openpyxl"
+        )
     try:
         df = pd.read_excel(INPUT_XLSX, sheet_name=SHEET_NAME, engine="openpyxl")
     except Exception as e:
@@ -88,7 +129,9 @@ def main():
 
     missing = [c for c in [COL_ART] + GMFCS_COLS if c not in df.columns]
     if missing:
-        raise SystemExit(f"Colonnes manquantes : {missing}\nColonnes trouvées : {list(df.columns)}")
+        raise SystemExit(
+            f"Colonnes manquantes : {missing}\nColonnes trouvées : {list(df.columns)}"
+        )
 
     bucket = {sec: [] for sec in SECTIONS_ORDER}
     errors = []
@@ -111,10 +154,10 @@ def main():
             low = sval.lower()
 
             # "???" => typeLateralityNA
-            #if low == "???":
-                #tlabel, y, color = TYPE_NA
-                #bucket[tlabel].append(f"{art}\t0\t25\t{tlabel}\t0\t{y}\tcolor={color}")
-                #continue
+            # if low == "???":
+            # tlabel, y, color = TYPE_NA
+            # bucket[tlabel].append(f"{art}\t0\t25\t{tlabel}\t0\t{y}\tcolor={color}")
+            # continue
 
             if is_zero_like(sval):
                 continue
@@ -129,9 +172,11 @@ def main():
 
     # Tri
     if SORT_WITHIN_SECTIONS:
+
         def art_key(line: str):
             m = re.match(r"^art(\d+)", line)
             return (0, int(m.group(1))) if m else (1, line.lower())
+
         for sec in SECTIONS_ORDER:
             bucket[sec] = sorted(bucket[sec], key=art_key)
 
@@ -174,8 +219,6 @@ def main():
     out_chr = Path(OUTPUT_CHR)
     out_chr.parent.mkdir(parents=True, exist_ok=True)
 
-
-
     # Récupère les couleurs depuis tes mappings existants
     color_I = SECTION_MAP["Sit-to-stand"][2]  # vvdyellow
     color_II = SECTION_MAP["Running"][2]  # vdyellow
@@ -191,18 +234,23 @@ def main():
     color_XII = SECTION_MAP["Hopping"][2]  # dyellow
     color_XIII = SECTION_MAP["GMFM-E"][2]  # dyellow
 
-
-    #with out_chr.open("w", encoding="utf-8-sig", newline="") as fw:
+    # with out_chr.open("w", encoding="utf-8-sig", newline="") as fw:
     with out_chr.open("w", encoding="utf-8", newline="") as fw:
         fw.write("# chr - CHRNAME CHRLABEL START END COLOR\n")
         fw.write(f"chr -\ttypeSit-to-stand\tSit-to-stand\t0\t{Y1}\t{color_I}\n")
         fw.write(f"chr -\ttypeRunning\tRunning\t0\t{Y2}\t{color_II}\n")
         fw.write(f"chr -\ttypeCycling\tCycling\t0\t{Y3}\t{color_III}\n")
-        fw.write(f"chr -\ttypeStair-negotiation\tStair-negotiation\t0\t{Y4}\t{color_IV}\n")
-        fw.write(f"chr -\ttypeObstacle-clearance\tObstacle-clearance\t0\t{Y5}\t{color_V}\n")
+        fw.write(
+            f"chr -\ttypeStair-negotiation\tStair-negotiation\t0\t{Y4}\t{color_IV}\n"
+        )
+        fw.write(
+            f"chr -\ttypeObstacle-clearance\tObstacle-clearance\t0\t{Y5}\t{color_V}\n"
+        )
         fw.write(f"chr -\ttypeTUG\tTUG\t0\t{Y5}\t{color_VI}\n")
         fw.write(f"chr -\ttypeGame\tGame\t0\t{Y7}\t{color_VII}\n")
-        fw.write(f"chr -\ttypeOne-leg-standing\tOne-leg-standing\t0\t{Y8}\t{color_VIII}\n")
+        fw.write(
+            f"chr -\ttypeOne-leg-standing\tOne-leg-standing\t0\t{Y8}\t{color_VIII}\n"
+        )
         fw.write(f"chr -\ttypeJumping\tJumping\t0\t{Y9}\t{color_IX}\n")
         fw.write(f"chr -\ttypeStepping-target\tStepping-target\t0\t{Y10}\t{color_X}\n")
         fw.write(f"chr -\ttypeSquat\tSquat\t0\t{Y11}\t{color_XI}\n")
@@ -213,6 +261,7 @@ def main():
 
     if errors:
         print(f"⚠️  {len(errors)} cellules vides signalées (voir section # ERRORS)")
+
 
 if __name__ == "__main__":
     main()

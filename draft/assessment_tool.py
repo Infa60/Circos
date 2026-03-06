@@ -1,12 +1,10 @@
-
-
 from pathlib import Path
 import re
 
 # ========== CONFIG ==========
-INPUT_XLSX   = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
-SHEET_NAME   = 0
-OUTPUT_TXT   = r"C:\Circos_project\Circos_review\assessment_tools.links.txt"
+INPUT_XLSX = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
+SHEET_NAME = 0
+OUTPUT_TXT = r"C:\Circos_project\Circos_review\assessment_tools.links.txt"
 OUTPUT_SUMMARY = r"C:\Circos_project\Circos_review\assessment_tools.numbers.txt"
 OUTPUT_CHR = r"C:\Circos_project\Circos_review\assessment_tools.data.txt"
 
@@ -16,8 +14,16 @@ Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8 = 470, 370, 60, 130, 20, 70, 70, 70
 # ============================
 
 COL_ART = "ArtNb"
-GMFCS_COLS = ["Optoelectronique", "Force-plate", "IMU", "EMG", "Wii-fit", "Heart-rate-monitor",
-              "Indirect-calorimetry", "Autres"]
+GMFCS_COLS = [
+    "Optoelectronique",
+    "Force-plate",
+    "IMU",
+    "EMG",
+    "Wii-fit",
+    "Heart-rate-monitor",
+    "Indirect-calorimetry",
+    "Autres",
+]
 
 SECTION_MAP = {
     "Optoelectronique": ("typeOptoelectronique", Y1, "vvdgreen"),  # vert très foncé
@@ -30,20 +36,29 @@ SECTION_MAP = {
     "Autres": ("typeAutres", Y8, "vvlgreen"),
 }
 
-SECTIONS_ORDER = ["typeOptoelectronique", "typeForce_plate", "typeIMU", "typeEMG", "typeWii_fit",
-                  "typeHeart_rate_monitor", "typeIndirect_calorimetry", "typeAutres"]
+SECTIONS_ORDER = [
+    "typeOptoelectronique",
+    "typeForce_plate",
+    "typeIMU",
+    "typeEMG",
+    "typeWii_fit",
+    "typeHeart_rate_monitor",
+    "typeIndirect_calorimetry",
+    "typeAutres",
+]
 
 # Coordonnées pour le résumé
 SUMMARY_Y = {
-    "typeOptoelectronique":   Y1,
-    "typeForce_plate":  Y2,
+    "typeOptoelectronique": Y1,
+    "typeForce_plate": Y2,
     "typeIMU": Y3,
-    "typeEMG":  Y4,
+    "typeEMG": Y4,
     "typeWii_fit": Y5,
     "typeHeart_rate_monitor": Y6,
     "typeIndirect_calorimetry": Y7,
-    "typeAutres": Y8
+    "typeAutres": Y8,
 }
+
 
 def as_art_label(raw) -> str:
     s = "" if raw is None else str(raw).strip()
@@ -57,6 +72,7 @@ def as_art_label(raw) -> str:
         return f"art{m.group(1)}"
     return s if s.lower().startswith("art") else f"art{s}"
 
+
 def is_zero_like(s: str) -> bool:
     txt = s.strip().replace(",", ".")
     try:
@@ -64,11 +80,14 @@ def is_zero_like(s: str) -> bool:
     except ValueError:
         return False
 
+
 def main():
     try:
         import pandas as pd
     except ImportError:
-        raise SystemExit("Ce script requiert pandas et openpyxl.\nInstalle :  pip install pandas openpyxl")
+        raise SystemExit(
+            "Ce script requiert pandas et openpyxl.\nInstalle :  pip install pandas openpyxl"
+        )
     try:
         df = pd.read_excel(INPUT_XLSX, sheet_name=SHEET_NAME, engine="openpyxl")
     except Exception as e:
@@ -76,7 +95,9 @@ def main():
 
     missing = [c for c in [COL_ART] + GMFCS_COLS if c not in df.columns]
     if missing:
-        raise SystemExit(f"Colonnes manquantes : {missing}\nColonnes trouvées : {list(df.columns)}")
+        raise SystemExit(
+            f"Colonnes manquantes : {missing}\nColonnes trouvées : {list(df.columns)}"
+        )
 
     bucket = {sec: [] for sec in SECTIONS_ORDER}
     errors = []
@@ -99,10 +120,10 @@ def main():
             low = sval.lower()
 
             # "???" => typeLateralityNA
-            #if low == "???":
-                #tlabel, y, color = TYPE_NA
-                #bucket[tlabel].append(f"{art}\t0\t25\t{tlabel}\t0\t{y}\tcolor={color}")
-                #continue
+            # if low == "???":
+            # tlabel, y, color = TYPE_NA
+            # bucket[tlabel].append(f"{art}\t0\t25\t{tlabel}\t0\t{y}\tcolor={color}")
+            # continue
 
             if is_zero_like(sval):
                 continue
@@ -117,9 +138,11 @@ def main():
 
     # Tri
     if SORT_WITHIN_SECTIONS:
+
         def art_key(line: str):
             m = re.match(r"^art(\d+)", line)
             return (0, int(m.group(1))) if m else (1, line.lower())
+
         for sec in SECTIONS_ORDER:
             bucket[sec] = sorted(bucket[sec], key=art_key)
 
@@ -162,7 +185,6 @@ def main():
     out_chr = Path(OUTPUT_CHR)
     out_chr.parent.mkdir(parents=True, exist_ok=True)
 
-
     # Récupère les couleurs depuis tes mappings existants
     color_I = SECTION_MAP["Optoelectronique"][2]  # vvdyellow
     color_II = SECTION_MAP["Force-plate"][2]  # vdyellow
@@ -173,7 +195,7 @@ def main():
     color_VII = SECTION_MAP["Indirect-calorimetry"][2]  # dyellow
     color_VIII = SECTION_MAP["Autres"][2]  # dyellow
 
-    #with out_chr.open("w", encoding="utf-8-sig", newline="") as fw:
+    # with out_chr.open("w", encoding="utf-8-sig", newline="") as fw:
     with out_chr.open("w", encoding="utf-8", newline="") as fw:
         fw.write("# chr - CHRNAME CHRLABEL START END COLOR\n")
         fw.write(f"chr -\ttypeOptoelectronique\tOptoelectronique\t0\t{Y1}\t{color_I}\n")
@@ -181,15 +203,19 @@ def main():
         fw.write(f"chr -\ttypeIMU\tIMU\t0\t{Y3}\t{color_III}\n")
         fw.write(f"chr -\ttypeEMG\tEMG\t0\t{Y4}\t{color_IV}\n")
         fw.write(f"chr -\ttypeWii_fit\tWii-fit\t0\t{Y5}\t{color_V}\n")
-        fw.write(f"chr -\ttypeHeart_rate_monitor\tHeart-rate-monitor\t0\t{Y6}\t{color_VI}\n")
-        fw.write(f"chr -\ttypeIndirect_calorimetry\tIndirect-calorimetry\t0\t{Y7}\t{color_VII}\n")
+        fw.write(
+            f"chr -\ttypeHeart_rate_monitor\tHeart-rate-monitor\t0\t{Y6}\t{color_VI}\n"
+        )
+        fw.write(
+            f"chr -\ttypeIndirect_calorimetry\tIndirect-calorimetry\t0\t{Y7}\t{color_VII}\n"
+        )
         fw.write(f"chr -\ttypeAutres\tAutres\t0\t{Y8}\t{color_VIII}\n")
 
     print("✅ Fichier chr écrit :", out_chr)
 
-
     if errors:
         print(f"⚠️  {len(errors)} cellules vides signalées (voir section # ERRORS)")
+
 
 if __name__ == "__main__":
     main()

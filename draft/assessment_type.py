@@ -1,12 +1,10 @@
-
-
 from pathlib import Path
 import re
 
 # ========== CONFIG ==========
-INPUT_XLSX   = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
-SHEET_NAME   = 0
-OUTPUT_TXT   = r"C:\Circos_project\Circos_review\assessment_type.links.txt"
+INPUT_XLSX = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
+SHEET_NAME = 0
+OUTPUT_TXT = r"C:\Circos_project\Circos_review\assessment_type.links.txt"
 OUTPUT_SUMMARY = r"C:\Circos_project\Circos_review\assessment_type.numbers.txt"
 OUTPUT_CHR = r"C:\Circos_project\Circos_review\assessment_type.data.txt"
 
@@ -16,7 +14,14 @@ Y1, Y2, Y3, Y4, Y5, Y6 = 490, 470, 240, 120, 100, 160
 # ============================
 
 COL_ART = "ArtNb"
-GMFCS_COLS = ["Spatiotemporal", "Kinematic", "Kinetic", "Electromyographic", "Metabolic", "Stability"]
+GMFCS_COLS = [
+    "Spatiotemporal",
+    "Kinematic",
+    "Kinetic",
+    "Electromyographic",
+    "Metabolic",
+    "Stability",
+]
 
 SECTION_MAP = {
     "Spatiotemporal": ("typeSpatiotemporal", Y1, "vvdpurple"),  # violet très foncé
@@ -28,18 +33,25 @@ SECTION_MAP = {
 }
 
 
-SECTIONS_ORDER = ["typeSpatiotemporal", "typeKinematic", "typeKinetic", "typeElectromyographic", "typeMetabolic",
-                  "typeStability"]
+SECTIONS_ORDER = [
+    "typeSpatiotemporal",
+    "typeKinematic",
+    "typeKinetic",
+    "typeElectromyographic",
+    "typeMetabolic",
+    "typeStability",
+]
 
 # Coordonnées pour le résumé
 SUMMARY_Y = {
-    "typeSpatiotemporal":   Y1,
-    "typeKinematic":  Y2,
+    "typeSpatiotemporal": Y1,
+    "typeKinematic": Y2,
     "typeKinetic": Y3,
-    "typeElectromyographic":  Y4,
+    "typeElectromyographic": Y4,
     "typeMetabolic": Y5,
-    "typeStability": Y6
+    "typeStability": Y6,
 }
+
 
 def as_art_label(raw) -> str:
     s = "" if raw is None else str(raw).strip()
@@ -53,6 +65,7 @@ def as_art_label(raw) -> str:
         return f"art{m.group(1)}"
     return s if s.lower().startswith("art") else f"art{s}"
 
+
 def is_zero_like(s: str) -> bool:
     txt = s.strip().replace(",", ".")
     try:
@@ -60,11 +73,14 @@ def is_zero_like(s: str) -> bool:
     except ValueError:
         return False
 
+
 def main():
     try:
         import pandas as pd
     except ImportError:
-        raise SystemExit("Ce script requiert pandas et openpyxl.\nInstalle :  pip install pandas openpyxl")
+        raise SystemExit(
+            "Ce script requiert pandas et openpyxl.\nInstalle :  pip install pandas openpyxl"
+        )
     try:
         df = pd.read_excel(INPUT_XLSX, sheet_name=SHEET_NAME, engine="openpyxl")
     except Exception as e:
@@ -72,7 +88,9 @@ def main():
 
     missing = [c for c in [COL_ART] + GMFCS_COLS if c not in df.columns]
     if missing:
-        raise SystemExit(f"Colonnes manquantes : {missing}\nColonnes trouvées : {list(df.columns)}")
+        raise SystemExit(
+            f"Colonnes manquantes : {missing}\nColonnes trouvées : {list(df.columns)}"
+        )
 
     bucket = {sec: [] for sec in SECTIONS_ORDER}
     errors = []
@@ -95,10 +113,10 @@ def main():
             low = sval.lower()
 
             # "???" => typeLateralityNA
-            #if low == "???":
-                #tlabel, y, color = TYPE_NA
-                #bucket[tlabel].append(f"{art}\t0\t25\t{tlabel}\t0\t{y}\tcolor={color}")
-                #continue
+            # if low == "???":
+            # tlabel, y, color = TYPE_NA
+            # bucket[tlabel].append(f"{art}\t0\t25\t{tlabel}\t0\t{y}\tcolor={color}")
+            # continue
 
             if is_zero_like(sval):
                 continue
@@ -113,9 +131,11 @@ def main():
 
     # Tri
     if SORT_WITHIN_SECTIONS:
+
         def art_key(line: str):
             m = re.match(r"^art(\d+)", line)
             return (0, int(m.group(1))) if m else (1, line.lower())
+
         for sec in SECTIONS_ORDER:
             bucket[sec] = sorted(bucket[sec], key=art_key)
 
@@ -158,7 +178,6 @@ def main():
     out_chr = Path(OUTPUT_CHR)
     out_chr.parent.mkdir(parents=True, exist_ok=True)
 
-
     # Récupère les couleurs depuis tes mappings existants
     color_I = SECTION_MAP["Spatiotemporal"][2]  # vvdyellow
     color_II = SECTION_MAP["Kinematic"][2]  # vdyellow
@@ -167,21 +186,23 @@ def main():
     color_V = SECTION_MAP["Metabolic"][2]  # dyellow
     color_VI = SECTION_MAP["Stability"][2]  # dyellow
 
-    #with out_chr.open("w", encoding="utf-8-sig", newline="") as fw:
+    # with out_chr.open("w", encoding="utf-8-sig", newline="") as fw:
     with out_chr.open("w", encoding="utf-8", newline="") as fw:
         fw.write("# chr - CHRNAME CHRLABEL START END COLOR\n")
         fw.write(f"chr -\ttypeSpatiotemporal\tSpatiotemporal\t0\t{Y1}\t{color_I}\n")
         fw.write(f"chr -\ttypeKinematic\tKinematic\t0\t{Y2}\t{color_II}\n")
         fw.write(f"chr -\ttypeKinetic\tKinetic\t0\t{Y3}\t{color_III}\n")
-        fw.write(f"chr -\ttypeElectromyographic\tElectromyographic\t0\t{Y4}\t{color_IV}\n")
+        fw.write(
+            f"chr -\ttypeElectromyographic\tElectromyographic\t0\t{Y4}\t{color_IV}\n"
+        )
         fw.write(f"chr -\ttypeMetabolic\tMetabolic\t0\t{Y5}\t{color_V}\n")
         fw.write(f"chr -\ttypeStability\tStability\t0\t{Y6}\t{color_VI}\n")
 
     print("✅ Fichier chr écrit :", out_chr)
 
-
     if errors:
         print(f"⚠️  {len(errors)} cellules vides signalées (voir section # ERRORS)")
+
 
 if __name__ == "__main__":
     main()

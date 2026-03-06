@@ -34,7 +34,9 @@ import re
 from pathlib import Path
 
 
-def generate_articles_karyotype(excel_path, sheet_idx, output_dir, col_art, col_ref="ref", end_value=100):
+def generate_articles_karyotype(
+    excel_path, sheet_idx, output_dir, col_art, col_ref="ref", end_value=100
+):
     """
     Generates the articles.data.txt (Karyotype) file from the Excel data.
 
@@ -51,7 +53,8 @@ def generate_articles_karyotype(excel_path, sheet_idx, output_dir, col_art, col_
     def normalize_ref(ref: str) -> str:
         """Cleans and transforms the reference text."""
         s = str(ref).strip()
-        if not s: return s
+        if not s:
+            return s
         # Replace special characters with dashes/underscores for Circos safety
         # (Though labels can contain spaces, cleaner strings avoid parsing errors)
         s = re.sub(r"[^\w\.,&]", "-", s)
@@ -60,12 +63,15 @@ def generate_articles_karyotype(excel_path, sheet_idx, output_dir, col_art, col_
 
     def art_label_from(raw) -> str:
         """Standardizes article label to 'artN'."""
-        if raw is None: return ""
+        if raw is None:
+            return ""
         s = str(raw).strip()
-        if s == "": return ""
+        if s == "":
+            return ""
         # Matches 'Art 1', 'art1', '1', etc.
         m = re.match(r"^[Aa]rt\s*([0-9]+)$", s) or re.match(r"^([0-9]+)$", s)
-        if m: return f"art{m.group(1)}"
+        if m:
+            return f"art{m.group(1)}"
         return s if s.lower().startswith("art") else f"art{s}"
 
     def art_number(raw) -> int:
@@ -87,7 +93,9 @@ def generate_articles_karyotype(excel_path, sheet_idx, output_dir, col_art, col_
         return
 
     if col_ref not in df.columns:
-        print(f"[WARN Articles] Column '{col_ref}' not found. Using '{col_art}' as the label fallback.")
+        print(
+            f"[WARN Articles] Column '{col_ref}' not found. Using '{col_art}' as the label fallback."
+        )
         col_ref = col_art  # Fallback
 
     # Sorting
@@ -105,7 +113,8 @@ def generate_articles_karyotype(excel_path, sheet_idx, output_dir, col_art, col_
             art_label = art_label_from(row.get(col_art))
             ref_label = normalize_ref(row.get(col_ref, ""))
 
-            if not art_label: continue
+            if not art_label:
+                continue
 
             # Format: chr - art1 Label 0 100 black
             # 'chr' indicates this is a chromosome definition in Circos
@@ -115,4 +124,6 @@ def generate_articles_karyotype(excel_path, sheet_idx, output_dir, col_art, col_
             fw.write(f"chr -\t{art_label}\t{ref_label}\t0\t{end_value}\tblack\n")
             count += 1
 
-    print(f"✅ Articles file successfully generated: {out_path} ({count} articles processed)")
+    print(
+        f"✅ Articles file successfully generated: {out_path} ({count} articles processed)"
+    )

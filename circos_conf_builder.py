@@ -30,7 +30,9 @@ import os
 from pathlib import Path
 
 
-def generate_circos_conf(output_dir, active_tracks, boundary_map, main_article_file="articles.data.txt"):
+def generate_circos_conf(
+    output_dir, active_tracks, boundary_map, main_article_file="articles.data.txt"
+):
     """
     Generates the circos.conf file with automatic spacing based on
     track order and their actual contents.
@@ -81,15 +83,15 @@ def generate_circos_conf(output_dir, active_tracks, boundary_map, main_article_f
     ordered_boundaries = []
 
     # 4.1. Articles (Always first if present)
-    if 'articles' in boundary_map:
-        start, end = boundary_map['articles']
-        ordered_boundaries.append({'name': 'articles', 'end': end, 'start': start})
+    if "articles" in boundary_map:
+        start, end = boundary_map["articles"]
+        ordered_boundaries.append({"name": "articles", "end": end, "start": start})
 
     # 4.2. Tracks (in the order defined in main)
     for t in valid_tracks:
         if t.subdir in boundary_map:
             start, end = boundary_map[t.subdir]
-            ordered_boundaries.append({'name': t.subdir, 'end': end, 'start': start})
+            ordered_boundaries.append({"name": t.subdir, "end": end, "start": start})
 
     # 4.3. Creation of Pairwise rules (Circular loop)
     if len(ordered_boundaries) > 1:

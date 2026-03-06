@@ -35,11 +35,11 @@ from typing import List, Dict, Tuple
 # =================
 # TO CUSTOMIZE:
 # =================
-BIB_PATH  = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Review_code\Exported Items.bib"
-OUT_XLSX  = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Review_code\short_refs_with_titles.xlsx"
+BIB_PATH = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Review_code\Exported Items.bib"
+OUT_XLSX = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Review_code\short_refs_with_titles.xlsx"
 
-SORT_OUTPUT  = True   # Final alphabetical sort (based on 'ref')
-DROP_MISSING = True   # Ignore entries without author or year
+SORT_OUTPUT = True  # Final alphabetical sort (based on 'ref')
+DROP_MISSING = True  # Ignore entries without author or year
 
 # ================
 # XLSX Dependency:
@@ -58,7 +58,8 @@ except ImportError as e:
 # Nothing to modify below this line
 # =================================
 
-ENTRY_START_RE = re.compile(r'@\s*(\w+)\s*\{\s*([^,]+)\s*,', re.UNICODE)
+ENTRY_START_RE = re.compile(r"@\s*(\w+)\s*\{\s*([^,]+)\s*,", re.UNICODE)
+
 
 def read_text_smart(path: Path) -> str:
     """Robust reading of the .bib file with encoding fallback."""
@@ -69,27 +70,34 @@ def read_text_smart(path: Path) -> str:
             continue
     return path.read_text(encoding="utf-8", errors="replace")
 
+
 def _strip_outer_quotes_or_braces(val: str) -> str:
     if not val:
         return ""
     v = val.strip()
-    if (v.startswith("{") and v.endswith("}")) or (v.startswith('"') and v.endswith('"')):
+    if (v.startswith("{") and v.endswith("}")) or (
+        v.startswith('"') and v.endswith('"')
+    ):
         return v[1:-1]
     return v
+
 
 def _norm_ws(s: str) -> str:
     return re.sub(r"\s+", " ", (s or "")).strip()
 
+
 def _remove_outer_braces_from_name(name: str) -> str:
     # {de la Cruz} -> de la Cruz
-    return re.sub(r'^\{(.+)\}$', r'\1', _norm_ws(name))
+    return re.sub(r"^\{(.+)\}$", r"\1", _norm_ws(name))
+
 
 def clean_title(title: str) -> str:
     """Removes ALL braces, normalizes spaces."""
     t = _strip_outer_quotes_or_braces(title)
-    t = re.sub(r"[{}]", "", t)     # removes all braces
+    t = re.sub(r"[{}]", "", t)  # removes all braces
     t = _norm_ws(t)
     return t
+
 
 def parse_entries(text: str) -> List[str]:
     """Returns the list of text blocks for each BibTeX entry."""
@@ -100,14 +108,14 @@ def parse_entries(text: str) -> List[str]:
         if not m:
             break
         start = m.start()
-        j = text.find('{', start)
+        j = text.find("{", start)
         depth = 0
         end = None
         for k in range(j, n):
             ch = text[k]
-            if ch == '{':
+            if ch == "{":
                 depth += 1
-            elif ch == '}':
+            elif ch == "}":
                 depth -= 1
                 if depth == 0:
                     end = k + 1
@@ -118,53 +126,56 @@ def parse_entries(text: str) -> List[str]:
         i = end
     return entries
 
+
 def parse_fields(entry_text: str) -> Dict[str, str]:
     """Extracts a field->value dict for a BibTeX entry (robustly)."""
-    start = entry_text.find('{')
+    start = entry_text.find("{")
     if start < 0:
         return {}
-    comma = entry_text.find(',', start)
+    comma = entry_text.find(",", start)
     if comma < 0:
         return {}
-    body = entry_text[comma+1: entry_text.rfind('}')]
+    body = entry_text[comma + 1 : entry_text.rfind("}")]
     parts: List[str] = []
     buf: List[str] = []
     depth = 0
     inq = False
     for ch in body:
-        if ch == '{' and not inq:
+        if ch == "{" and not inq:
             depth += 1
             buf.append(ch)
-        elif ch == '}' and not inq:
+        elif ch == "}" and not inq:
             depth = max(0, depth - 1)
             buf.append(ch)
         elif ch == '"' and depth == 0:
             inq = not inq
             buf.append(ch)
-        elif ch == ',' and depth == 0 and not inq:
-            s = ''.join(buf).strip()
+        elif ch == "," and depth == 0 and not inq:
+            s = "".join(buf).strip()
             if s:
                 parts.append(s)
             buf = []
         else:
             buf.append(ch)
     if buf:
-        parts.append(''.join(buf).strip())
+        parts.append("".join(buf).strip())
 
     out: Dict[str, str] = {}
     for p in parts:
-        if '=' in p:
-            k, v = p.split('=', 1)
+        if "=" in p:
+            k, v = p.split("=", 1)
             key = _norm_ws(k).lower()
             val = _strip_outer_quotes_or_braces(_norm_ws(v))
             out[key] = val
     return out
 
+
 def split_authors(s: str) -> List[str]:
     if not s:
         return []
     # BibTeX separates authors with " and "
-    return [_norm_ws(part) for part in s.split(' and ') if _norm_ws(part)]
+    return [_norm_ws(part) for part in s.split(" and ") if _norm_ws(part)]
+
 
 def display_surname(author: str) -> str:
     """
@@ -172,29 +183,31 @@ def display_surname(author: str) -> str:
     Handles 'Last, First' or 'First Last' and removes enclosing braces.
     """
     a = _remove_outer_braces_from_name(author)
-    if ',' in a:
-        sur = a.split(',', 1)[0]
+    if "," in a:
+        sur = a.split(",", 1)[0]
     else:
-        parts = a.split(' ')
-        sur = parts[-1] if parts else ''
+        parts = a.split(" ")
+        sur = parts[-1] if parts else ""
     return _norm_ws(sur)
+
 
 def year_from_fields(f: Dict[str, str]) -> str:
     # Priority to 'year', otherwise 1st YYYY sequence in 'date'
-    if f.get('year'):
-        m = re.search(r'\d{4}', f['year'])
+    if f.get("year"):
+        m = re.search(r"\d{4}", f["year"])
         if m:
             return m.group(0)
-    if f.get('date'):
-        m = re.search(r'\d{4}', f['date'])
+    if f.get("date"):
+        m = re.search(r"\d{4}", f["date"])
         if m:
             return m.group(0)
     return ""
 
+
 def short_ref_and_title(f: Dict[str, str]) -> Tuple[str, str]:
-    authors = split_authors(f.get('author', ''))
+    authors = split_authors(f.get("author", ""))
     year = year_from_fields(f)
-    title = clean_title(f.get('title', ''))
+    title = clean_title(f.get("title", ""))
     if not authors or not year:
         return "", title
     if len(authors) >= 3:
@@ -208,6 +221,7 @@ def short_ref_and_title(f: Dict[str, str]) -> Tuple[str, str]:
         a1 = display_surname(authors[0])
         ref = f"{a1} {year}"
     return ref, title
+
 
 def write_excel(rows: List[Tuple[str, str]], out_path: Path) -> None:
     wb = Workbook()
@@ -226,11 +240,15 @@ def write_excel(rows: List[Tuple[str, str]], out_path: Path) -> None:
 
     # Simple auto column width
     for col in ("A", "B"):
-        max_len = max((len(str(ws[f"{col}{r}"].value)) for r in range(1, ws.max_row + 1)), default=0)
+        max_len = max(
+            (len(str(ws[f"{col}{r}"].value)) for r in range(1, ws.max_row + 1)),
+            default=0,
+        )
         ws.column_dimensions[col].width = min(max(12, max_len + 2), 80)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(str(out_path))
+
 
 def main():
     bib_path = Path(BIB_PATH)
@@ -271,11 +289,11 @@ def main():
         if totals.get(ref, 0) >= 2:
             idx = seen_index.get(ref, 0)  # 0,1,2...
             if idx < 26:
-                suffix = chr(ord('a') + idx)  # a..z
+                suffix = chr(ord("a") + idx)  # a..z
             else:
                 # beyond 26 → aa, ab, ...
-                first = chr(ord('a') + (idx // 26) - 1)
-                second = chr(ord('a') + (idx % 26))
+                first = chr(ord("a") + (idx // 26) - 1)
+                second = chr(ord("a") + (idx % 26))
                 suffix = f"{first}{second}"
             final_rows.append((f"{ref}{suffix}", title))
             seen_index[ref] = idx + 1
@@ -287,6 +305,7 @@ def main():
 
     write_excel(final_rows, out_path)
     print(f"✅ {len(final_rows)} rows written to: {out_path}")
+
 
 if __name__ == "__main__":
     main()
