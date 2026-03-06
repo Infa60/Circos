@@ -1,10 +1,31 @@
 """
-Lit un .bib (export Zotero) et écrit un fichier Excel (.xlsx) avec 2 colonnes :
-  - ref   : 'PremierAuteur et al. YYYY' (>=3 auteurs) | 'A1 & A2 YYYY' (2) | 'A1 YYYY' (1)
-  - title : champ 'title' SANS accolades { } et espaces normalisés
+================================================================================
+BIBTEX TO EXCEL SHORT REFERENCE EXTRACTOR
+================================================================================
 
-Gère les doublons par suffixes a, b, c… (toutes les occurrences d'un même "ref de base" sont suffixées).
-Affiche le nombre total d'entrées lues depuis le .bib.
+Description:
+This script reads a `.bib` file (such as an export from Zotero, Mendeley, or
+EndNote) and generates a clean Excel file mapping short citation references
+to their full article titles.
+
+Key Features:
+1. Custom Parsing: Robustly parses BibTeX syntax without requiring heavy external
+   dependencies like `bibtexparser`. It handles encoding fallbacks automatically.
+2. Smart Author Formatting:
+   - 1 author: "Author YYYY" (e.g., Smith 2020)
+   - 2 authors: "A1 & A2 YYYY" (e.g., Doe & Lee 2021)
+   - 3+ authors: "FirstAuthor et al. YYYY" (e.g., Brown et al. 2019)
+3. Duplicate Handling: If multiple papers share the exact same author(s) and year,
+   the script automatically appends suffixes ('a', 'b', 'c', etc.) to distinguish
+   them (e.g., "Smith 2020a", "Smith 2020b").
+4. Text Cleanup: Strips stray BibTeX formatting brackets (e.g., `{title}`) and
+   normalizes excessive whitespace.
+
+Output:
+An Excel (`.xlsx`) file containing two columns:
+  - ref: The short citation reference.
+  - title: The cleaned article title.
+================================================================================
 """
 
 import re
@@ -12,35 +33,35 @@ from pathlib import Path
 from typing import List, Dict, Tuple
 
 # =================
-# À PERSONNALISER :
+# TO CUSTOMIZE:
 # =================
 BIB_PATH  = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Review_code\Exported Items.bib"
 OUT_XLSX  = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Review_code\short_refs_with_titles.xlsx"
 
-SORT_OUTPUT  = True   # Trie alphabétique final (sur 'ref')
-DROP_MISSING = True   # Ignore les entrées sans auteur ou sans année
+SORT_OUTPUT  = True   # Final alphabetical sort (based on 'ref')
+DROP_MISSING = True   # Ignore entries without author or year
 
 # ================
-# Dépendance XLSX:
+# XLSX Dependency:
 # ================
 try:
     from openpyxl import Workbook
     from openpyxl.styles import Font
 except ImportError as e:
     raise SystemExit(
-        "Le module 'openpyxl' est requis pour écrire en .xlsx.\n"
-        "Installe-le dans ton environnement PyCharm :\n"
+        "The 'openpyxl' module is required to write .xlsx files.\n"
+        "Install it in your PyCharm environment:\n"
         "    pip install openpyxl"
     )
 
-# =========================
-# Rien à modifier en dessous
-# =========================
+# =================================
+# Nothing to modify below this line
+# =================================
 
 ENTRY_START_RE = re.compile(r'@\s*(\w+)\s*\{\s*([^,]+)\s*,', re.UNICODE)
 
 def read_text_smart(path: Path) -> str:
-    """Lecture robuste du .bib avec fallback d'encodage."""
+    """Robust reading of the .bib file with encoding fallback."""
     for enc in ("utf-8", "utf-8-sig", "cp1252", "latin-1"):
         try:
             return path.read_text(encoding=enc)
@@ -64,14 +85,14 @@ def _remove_outer_braces_from_name(name: str) -> str:
     return re.sub(r'^\{(.+)\}$', r'\1', _norm_ws(name))
 
 def clean_title(title: str) -> str:
-    """Supprime TOUTES les accolades, normalise les espaces."""
+    """Removes ALL braces, normalizes spaces."""
     t = _strip_outer_quotes_or_braces(title)
-    t = re.sub(r"[{}]", "", t)     # enlève toutes les accolades
+    t = re.sub(r"[{}]", "", t)     # removes all braces
     t = _norm_ws(t)
     return t
 
 def parse_entries(text: str) -> List[str]:
-    """Retourne la liste des blocs texte de chaque entrée BibTeX."""
+    """Returns the list of text blocks for each BibTeX entry."""
     entries: List[str] = []
     i, n = 0, len(text)
     while True:
@@ -98,7 +119,7 @@ def parse_entries(text: str) -> List[str]:
     return entries
 
 def parse_fields(entry_text: str) -> Dict[str, str]:
-    """Extrait un dict champ->valeur pour une entrée BibTeX (robuste)."""
+    """Extracts a field->value dict for a BibTeX entry (robustly)."""
     start = entry_text.find('{')
     if start < 0:
         return {}
@@ -142,13 +163,13 @@ def parse_fields(entry_text: str) -> Dict[str, str]:
 def split_authors(s: str) -> List[str]:
     if not s:
         return []
-    # BibTeX sépare les auteurs par " and "
+    # BibTeX separates authors with " and "
     return [_norm_ws(part) for part in s.split(' and ') if _norm_ws(part)]
 
 def display_surname(author: str) -> str:
     """
-    Retourne le nom de famille 'affiché' (accents conservés).
-    Gère 'Nom, Prénom' ou 'Prénom Nom' et retire des accolades englobantes.
+    Returns the 'displayed' surname (accents preserved).
+    Handles 'Last, First' or 'First Last' and removes enclosing braces.
     """
     a = _remove_outer_braces_from_name(author)
     if ',' in a:
@@ -159,7 +180,7 @@ def display_surname(author: str) -> str:
     return _norm_ws(sur)
 
 def year_from_fields(f: Dict[str, str]) -> str:
-    # priorité à year, sinon 1re séquence AAAA dans date
+    # Priority to 'year', otherwise 1st YYYY sequence in 'date'
     if f.get('year'):
         m = re.search(r'\d{4}', f['year'])
         if m:
@@ -192,18 +213,22 @@ def write_excel(rows: List[Tuple[str, str]], out_path: Path) -> None:
     wb = Workbook()
     ws = wb.active
     ws.title = "refs"
-    # En-têtes
+
+    # Headers
     ws.append(["ref", "title"])
     bold = Font(bold=True)
     ws["A1"].font = bold
     ws["B1"].font = bold
-    # Lignes
+
+    # Rows
     for ref, title in rows:
         ws.append([ref, title])
-    # largeur auto simple
+
+    # Simple auto column width
     for col in ("A", "B"):
         max_len = max((len(str(ws[f"{col}{r}"].value)) for r in range(1, ws.max_row + 1)), default=0)
         ws.column_dimensions[col].width = min(max(12, max_len + 2), 80)
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(str(out_path))
 
@@ -212,15 +237,15 @@ def main():
     out_path = Path(OUT_XLSX)
 
     if not bib_path.exists():
-        raise FileNotFoundError(f"Fichier .bib introuvable : {bib_path}")
+        raise FileNotFoundError(f"Bib file not found: {bib_path}")
 
     text = read_text_smart(bib_path)
 
-    # Parse et comptage des entrées
+    # Parse and count entries
     entry_blocks = parse_entries(text)
-    print(f"📄 Entrées lues depuis le .bib : {len(entry_blocks)}")
+    print(f"📄 Entries read from the .bib: {len(entry_blocks)}")
 
-    # Construire les refs de base + titres
+    # Build base refs + titles
     base_rows: List[Tuple[str, str]] = []  # (ref_base, title)
     for block in entry_blocks:
         f = parse_fields(block)
@@ -230,14 +255,14 @@ def main():
         elif not DROP_MISSING:
             base_rows.append(("", title))
 
-    # Comptage total par ref de base
+    # Total count per base ref
     totals: Dict[str, int] = {}
     for ref, _ in base_rows:
         if not ref:
             continue
         totals[ref] = totals.get(ref, 0) + 1
 
-    # Attribution des suffixes a/b/c pour toutes les occurrences d'une ref de base
+    # Assign a/b/c suffixes for all occurrences of a base ref
     seen_index: Dict[str, int] = {}
     final_rows: List[Tuple[str, str]] = []
     for ref, title in base_rows:
@@ -248,7 +273,7 @@ def main():
             if idx < 26:
                 suffix = chr(ord('a') + idx)  # a..z
             else:
-                # au-delà de 26 → aa, ab, ...
+                # beyond 26 → aa, ab, ...
                 first = chr(ord('a') + (idx // 26) - 1)
                 second = chr(ord('a') + (idx % 26))
                 suffix = f"{first}{second}"
@@ -261,7 +286,7 @@ def main():
         final_rows = sorted(final_rows, key=lambda x: x[0].lower())
 
     write_excel(final_rows, out_path)
-    print(f"✅ {len(final_rows)} lignes écrites dans : {out_path}")
+    print(f"✅ {len(final_rows)} rows written to: {out_path}")
 
 if __name__ == "__main__":
     main()

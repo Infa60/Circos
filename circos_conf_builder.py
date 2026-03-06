@@ -1,21 +1,49 @@
+"""
+================================================================================
+CIRCOS CONFIGURATION BUILDER
+================================================================================
+
+Description:
+This script dynamically generates the master `circos.conf` file required by the
+Circos Perl engine to render the final circular visualization. It eliminates the
+need for manual tweaking of the configuration file.
+
+Key Features:
+1. Dynamic Karyotype & Tracks: Only includes tracks that successfully generated
+   data, preventing Circos from crashing due to missing files.
+2. Automated Spacing (The Pairwise Logic): This is the most crucial part of
+   the script. Circos plots can look messy if spacing isn't handled correctly.
+   This script calculates exactly where one category (e.g., GMFCS levels) ends
+   and where the next (e.g., Topography) begins. It then injects `<pairwise>`
+   rules to enforce a distinct, consistent visual gap (5r) between different
+   groups, while keeping elements within the same group tightly packed.
+3. Block Generation: Automatically constructs the `<plot>` (for text/numbers)
+   and `<link>` (for the internal connecting ribbons) blocks based on the active
+   tracks defined in the orchestrator.
+
+Output:
+A ready-to-use `circos.conf` file saved in the specified output directory.
+================================================================================
+"""
+
 import os
 from pathlib import Path
 
 
 def generate_circos_conf(output_dir, active_tracks, boundary_map, main_article_file="articles.data.txt"):
     """
-    Génère le fichier circos.conf avec des espacements automatiques
-    basés sur l'ordre des tracks et leurs contenus réels.
+    Generates the circos.conf file with automatic spacing based on
+    track order and their actual contents.
     """
 
-    # 1. Karyotype (Liste des fichiers de données)
-    # On inclut seulement les tracks qui ont généré des données (présents dans boundary_map)
+    # 1. Karyotype (List of data files)
+    # We only include tracks that generated data (present in boundary_map)
     valid_tracks = [t for t in active_tracks if t.subdir in boundary_map]
 
     track_data_files = [f"{t.subdir}.data.txt" for t in valid_tracks]
     karyotype_string = f"{main_article_file}, {', '.join(track_data_files)}"
 
-    # 2. Plots (Textes / Labels)
+    # 2. Plots (Texts / Labels)
     plots_block = ""
     for t in valid_tracks:
         plots_block += f"""
@@ -31,7 +59,7 @@ def generate_circos_conf(output_dir, active_tracks, boundary_map, main_article_f
         padding        = 0p
     </plot>"""
 
-    # 3. Links (Rubans)
+    # 3. Links (Ribbons)
     links_block = ""
     for t in valid_tracks:
         links_block += f"""
@@ -44,42 +72,42 @@ def generate_circos_conf(output_dir, active_tracks, boundary_map, main_article_f
         ribbon        = yes
     </link>"""
 
-    # 4. CALCUL AUTOMATIQUE DES ESPACES (SPACING)
-    # Logique : Fin Element A -> Debut Element B = 5r
+    # 4. AUTOMATIC SPACING CALCULATION
+    # Logic: End of Element A -> Start of Element B = 5r
 
     spacing_block = "default = 0.003r\n"
 
-    # On construit la liste ordonnée des blocs pour le cercle
+    # Build an ordered list of blocks for the circle
     ordered_boundaries = []
 
-    # 4.1. Articles (Toujours en premier si présent)
+    # 4.1. Articles (Always first if present)
     if 'articles' in boundary_map:
         start, end = boundary_map['articles']
         ordered_boundaries.append({'name': 'articles', 'end': end, 'start': start})
 
-    # 4.2. Tracks (dans l'ordre défini dans le main)
+    # 4.2. Tracks (in the order defined in main)
     for t in valid_tracks:
         if t.subdir in boundary_map:
             start, end = boundary_map[t.subdir]
             ordered_boundaries.append({'name': t.subdir, 'end': end, 'start': start})
 
-    # 4.3. Création des règles Pairwise (Boucle circulaire)
+    # 4.3. Creation of Pairwise rules (Circular loop)
     if len(ordered_boundaries) > 1:
         for i in range(len(ordered_boundaries)):
             current = ordered_boundaries[i]
-            # Le suivant (avec modulo pour revenir au premier à la fin)
+            # The next one (with modulo to loop back to the first at the end)
             next_block = ordered_boundaries[(i + 1) % len(ordered_boundaries)]
 
-            # Règle : Fin du courant -> Début du suivant
+            # Rule: End of current -> Start of next
             spacing_block += f"""
-        # Espace entre {current['name']} et {next_block['name']}
+        # Space between {current['name']} and {next_block['name']}
         <pairwise {current['end']},{next_block['start']}>
             spacing = 5r
         </pairwise>"""
 
-    # 5. Contenu final du fichier
+    # 5. Final file content
     conf_content = f"""# ----------------------------------------------
-# CONFIGURATION AUTOMATIQUE GENEREE
+# AUTOMATICALLY GENERATED CONFIGURATION
 # ----------------------------------------------
 <image> 
     dir* = . 
@@ -115,7 +143,7 @@ show_ticks       = no
 show_tick_labels = no
 
 # ----------------------------------------------
-# LABELS (Noms des sections sur le cercle)
+# LABELS (Section names on the circle)
 # ----------------------------------------------
 <ideogram>
     show_label     = yes
@@ -128,14 +156,14 @@ show_tick_labels = no
 </ideogram>
 
 # ----------------------------------------------
-# PLOTS (Nombres / Totaux)
+# PLOTS (Numbers / Totals)
 # ----------------------------------------------
 <plots>
 {plots_block}
 </plots>
 
 # ----------------------------------------------
-# LINKS (Rubans de connexion)
+# LINKS (Connection ribbons)
 # ----------------------------------------------
 <links>
 {links_block}
@@ -150,4 +178,4 @@ track_defaults* = undef
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(conf_content)
 
-    print(f"✅ Fichier de configuration généré : {out_path}")
+    print(f"✅ Configuration file generated: {out_path}")

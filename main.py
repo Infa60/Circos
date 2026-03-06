@@ -1,3 +1,40 @@
+"""
+================================================================================
+CIRCOS PIPELINE ORCHESTRATOR
+================================================================================
+
+Description:
+This script acts as the main orchestrator for generating Circos visualization
+files from an Excel dataset. It maps clinical/experimental characteristics to
+specific research articles and creates a circular dependency graph.
+
+Key Steps Performed:
+1. Configuration Setup: Defines how Excel columns map to specific Circos tracks
+   (e.g., GMFCS level, CP Type, Topography) and assigns specific RGB colors.
+2. Article Karyotype Generation (Phase 0): Calls an external script to define
+   the base "chromosomes" (the articles) of the Circos plot.
+3. Global Analysis (Phase 1): Scans the entire Excel dataset to find the global
+   minimum and maximum number of articles across all categories. This ensures
+   accurate relative scaling.
+4. Track Generation & Scaling (Phase 2):
+   - Reads the data for each configured track.
+   - Mathematically rescales the visual block sizes between a defined min/max
+     visual size (`VISUAL_MIN_SIZE`, `VISUAL_MAX_SIZE`). This prevents categories
+     with huge article counts from taking over the entire graph, while keeping
+     categories with few articles visible.
+   - Generates the `.data.txt`, `.links.txt`, and `.numbers.txt` files for each track.
+   - Records the start and end boundary labels for spacing purposes.
+5. Circos Configuration Generation (Phase 3): Passes the recorded boundaries
+   to an external script to dynamically generate the `circos.conf` file with
+   correct automated spacing.
+
+Outputs:
+- A set of directories corresponding to each track, containing formatted text
+  files ready to be parsed by the Circos Perl engine.
+- A final `circos.conf` file at the root of the output directory.
+================================================================================
+"""
+
 from dataclasses import dataclass
 from typing import List, Dict, Tuple
 from pathlib import Path
@@ -10,27 +47,27 @@ from circos_conf_builder import generate_circos_conf
 #              USER CONFIGURATION
 # ==========================================
 
-# 1. PARAMÈTRES FICHIER EXCEL
+# 1. EXCEL FILE PARAMETERS
 EXCEL_PATH = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
-SHEET_IDX = 0       # Index de la feuille
-COL_ART = "ArtNb"   # Nom de la colonne ID article
-COL_REF = "ref"     # Name of the Reference column
+SHEET_IDX = 0       # Sheet index
+COL_ART = "ArtNb"   # Article ID column name
+COL_REF = "ref"     # Reference column name
 
-# 2. PARAMÈTRES DE SORTIE
+# 2. OUTPUT PARAMETERS
 OUTPUT_DIR = r"C:\Circos_project\Circos_review2"
 
-# 3. PARAMÈTRES D'ÉCHELLE (VISUALISATION)
-# Taille visuelle min/max des sections (indépendant du nombre réel d'articles)
+# 3. SCALING PARAMETERS (VISUALIZATION)
+# Min/max visual size of sections (independent of the actual number of articles)
 VISUAL_MIN_SIZE = 70
 VISUAL_MAX_SIZE = 400
 
 
 # ==========================================
-#           CLASSES & UTILITAIRES
+#           CLASSES & UTILITIES
 # ==========================================
 
 def as_art_label(raw) -> str:
-    """Normalise l'ID d'article -> 'artNN'."""
+    """Normalizes the article ID -> 'artNN'."""
     s = "" if raw is None else str(raw).strip()
     if s == "": return ""
     m = re.match(r"^[Aa]rt\s*([0-9]+)$", s) or re.match(r"^([0-9]+)$", s)
@@ -39,7 +76,7 @@ def as_art_label(raw) -> str:
 
 
 def is_zero_like(val) -> bool:
-    """Vaut True si la valeur est 0 ou vide."""
+    """Returns True if the value is 0 or empty."""
     if val is None: return False
     try:
         return float(str(val).strip().replace(",", ".")) == 0.0
@@ -52,21 +89,21 @@ NA_TOKENS = {"", "na", "n/a", "nan", "-", "--", "?", "??"}
 
 @dataclass
 class Section:
-    excel_col: str  # Nom colonne Excel
-    tlabel: str  # Identifiant Circos
-    color: str  # Couleur
+    excel_col: str  # Excel column name
+    tlabel: str     # Circos identifier
+    color: str      # RGB Color
 
 
 @dataclass
 class TrackConfig:
-    name: str  # Nom affichage
+    name: str  # Display name
     sections: List[Section]
-    subdir: str  # Sous-dossier sortie
+    subdir: str  # Output subfolder
 
     treat_empty_as_error: bool = True
     dedup: bool = True
     sort_in_section: bool = True
-    special_na: Tuple[str, str] | None = None  # ("label_na", "couleur_na")
+    special_na: Tuple[str, str] | None = None  # ("label_na", "color_na")
 
     @property
     def out_prefix(self):
@@ -74,11 +111,11 @@ class TrackConfig:
 
 
 # ==========================================
-#           MOTEUR DE GÉNÉRATION
+#           GENERATION ENGINE
 # ==========================================
 
 def get_article_boundaries():
-    """Trouve le premier et le dernier article (ex: art1, art53)."""
+    """Finds the first and last article (e.g., art1, art53)."""
     try:
         df = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_IDX, engine="openpyxl")
         valid_arts = []
@@ -97,12 +134,12 @@ def get_article_boundaries():
             return valid_arts[0], valid_arts[-1]
         return None, None
     except Exception as e:
-        print(f"[ERREUR] Impossible de lire les articles: {e}")
+        print(f"[ERROR] Cannot read articles: {e}")
         return None, None
 
 
 def get_counts_for_config(cfg: TrackConfig) -> Dict[str, int]:
-    """Compte le nombre d'articles par section pour calculer le min/max global."""
+    """Counts the number of articles per section to calculate the global min/max."""
     section_map = {s.excel_col: s.tlabel for s in cfg.sections}
     sections_order = [s.tlabel for s in cfg.sections]
 
@@ -114,7 +151,7 @@ def get_counts_for_config(cfg: TrackConfig) -> Dict[str, int]:
     try:
         df = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_IDX, engine="openpyxl")
     except Exception as e:
-        print(f"[ERREUR] Lecture Excel ({cfg.name}): {e}")
+        print(f"[ERROR] Excel reading ({cfg.name}): {e}")
         return {}
 
     cols_to_check = [s.excel_col for s in cfg.sections]
@@ -149,7 +186,7 @@ def get_counts_for_config(cfg: TrackConfig) -> Dict[str, int]:
 
 
 def build_track(cfg: TrackConfig, start_line, end_line, global_min, global_max):
-    """Génère les fichiers Circos et retourne les bornes (premier, dernier label)."""
+    """Generates Circos files and returns boundaries (first, last label)."""
 
     section_map = {s.excel_col: (s.tlabel, s.color) for s in cfg.sections}
     sections_order = [s.tlabel for s in cfg.sections]
@@ -165,11 +202,11 @@ def build_track(cfg: TrackConfig, start_line, end_line, global_min, global_max):
     bucket = {t: [] for t in sections_order}
     errors = []
 
-    # 1. Remplissage
+    # 1. Data population
     for _, row in df.iterrows():
         art = as_art_label(row.get(COL_ART))
         if not art:
-            if cfg.treat_empty_as_error: errors.append(("(art vide)", COL_ART))
+            if cfg.treat_empty_as_error: errors.append(("(empty art)", COL_ART))
             continue
 
         for col in cols_to_check:
@@ -197,7 +234,7 @@ def build_track(cfg: TrackConfig, start_line, end_line, global_min, global_max):
             tlabel, color = section_map[col]
             bucket[tlabel].append(f"{art}\t{start_line}\t{end_line}\t{tlabel}\t0\tSIZE_PLACEHOLDER\tcolor={color}")
 
-    # 2. Calculs & Tris
+    # 2. Calculations & Sorting
     real_counts = {}
     for t in sections_order:
         if cfg.dedup: bucket[t] = list(dict.fromkeys(bucket[t]))
@@ -211,7 +248,7 @@ def build_track(cfg: TrackConfig, start_line, end_line, global_min, global_max):
             bucket[t] = sorted(bucket[t], key=art_key)
         real_counts[t] = len(bucket[t])
 
-    # 3. Mise à l'échelle & Bornes
+    # 3. Scaling & Boundaries
     scaled_sizes = {}
     active_labels = []
 
@@ -236,7 +273,7 @@ def build_track(cfg: TrackConfig, start_line, end_line, global_min, global_max):
             new_lines.append(line.replace("SIZE_PLACEHOLDER", str(scaled_size)))
         bucket[t] = new_lines
 
-    # 4. Écriture
+    # 4. Writing files
     base_path = Path(OUTPUT_DIR) / cfg.subdir
     base_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -268,14 +305,14 @@ def build_track(cfg: TrackConfig, start_line, end_line, global_min, global_max):
             pretty, color = meta_info[t]
             fw.write(f"chr -\t{t}\t{pretty}\t0\t{scaled_sizes[t]}\t{color}\n")
 
-    # Retourne les bornes pour le fichier de config
+    # Returns the boundaries for the config file
     if active_labels:
         return active_labels[0], active_labels[-1]
     return None, None
 
 
 # ==========================================
-#           CONFIGURATIONS DES BLOCS
+#           TRACK CONFIGURATIONS
 # ==========================================
 
 gmfcs_config = TrackConfig(
@@ -382,12 +419,12 @@ tasks_config = TrackConfig(
 )
 
 # ==========================================
-#           EXÉCUTION PRINCIPALE
+#           MAIN EXECUTION
 # ==========================================
 
 if __name__ == "__main__":
 
-    # 4. CHOIX DE L'ORDRE D'EXÉCUTION (MODIFIEZ L'ORDRE ICI)
+    # 4. EXECUTION ORDER CHOICE (MODIFY ORDER HERE)
     ACTIVE_TRACKS = [
         gmfcs_config,
         cp_type_config,
@@ -407,40 +444,40 @@ if __name__ == "__main__":
         end_value=60  # You can adjust default article size here
     )
 
-    print("\n=== PHASE 1 : Analyse Globale (Calcul des Min/Max) ===")
+    print("\n=== PHASE 1: Global Analysis (Min/Max Calculation) ===")
     all_counts = []
 
     for cfg in ACTIVE_TRACKS:
-        print(f"Scan de : {cfg.name}...")
+        print(f"Scanning: {cfg.name}...")
         counts_dict = get_counts_for_config(cfg)
         valid_vals = [v for v in counts_dict.values() if v > 0]
         all_counts.extend(valid_vals)
 
     if not all_counts:
         GLOBAL_MIN, GLOBAL_MAX = 0, 1
-        print("[INFO] Aucune donnée trouvée.")
+        print("[INFO] No data found.")
     else:
         GLOBAL_MIN = min(all_counts)
         GLOBAL_MAX = max(all_counts)
 
-    print(f"\n>>> BORNES GLOBALES : Min={GLOBAL_MIN}, Max={GLOBAL_MAX}")
-    print(f">>> CIBLE VISUELLE : [{VISUAL_MIN_SIZE} - {VISUAL_MAX_SIZE}]\n")
+    print(f"\n>>> GLOBAL BOUNDARIES: Min={GLOBAL_MIN}, Max={GLOBAL_MAX}")
+    print(f">>> VISUAL TARGET: [{VISUAL_MIN_SIZE} - {VISUAL_MAX_SIZE}]\n")
 
-    print("=== PHASE 2 : Génération & Récupération des Bornes ===")
+    print("=== PHASE 2: Generation & Boundary Extraction ===")
     boundary_map = {}
 
-    # Bornes des Articles
+    # Article Boundaries
     first_art, last_art = get_article_boundaries()
     if first_art:
-        print(f"Articles : {first_art} -> {last_art}")
+        print(f"Articles: {first_art} -> {last_art}")
         boundary_map['articles'] = (first_art, last_art)
 
-    # Bornes des Tracks
+    # Track Boundaries
     start_art_line = 0
     end_art_line = 9
 
     for cfg in ACTIVE_TRACKS:
-        print(f"Traitement : {cfg.name}")
+        print(f"Processing: {cfg.name}")
         first_lbl, last_lbl = build_track(cfg, start_art_line, end_art_line, GLOBAL_MIN, GLOBAL_MAX)
 
         if first_lbl and last_lbl:
@@ -449,11 +486,11 @@ if __name__ == "__main__":
         start_art_line = end_art_line + 1
         end_art_line = start_art_line + 9
 
-    print("\n=== PHASE 3 : Création automatique de circos.conf ===")
+    print("\n=== PHASE 3: Automatic creation of circos.conf ===")
     generate_circos_conf(
         output_dir=OUTPUT_DIR,
         active_tracks=ACTIVE_TRACKS,
         boundary_map=boundary_map
     )
 
-    print("\n✅ Terminé avec succès.")
+    print("\n✅ Completed successfully.")
