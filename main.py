@@ -402,8 +402,8 @@ assessment_type_config = TrackConfig(
     subdir="assessment_type",
     sections=[
         Section("Spatiotemporal", "typeSpatiotemporal", "40,90,190"),
-        Section("Kinematic", "typeKinematic", "55,120,210"),
-        Section("Kinetic", "typeKinetic", "70,150,230"),
+        Section("Kinematics", "typeKinematics", "55,120,210"),
+        Section("Kinetics", "typeKinetics", "70,150,230"),
         Section("Stability", "typeStability", "90,170,240"),
         Section("Electromyographic", "typeElectromyographic", "120,190,250"),
         Section("Metabolic", "typeMetabolic", "170,215,255"),
@@ -443,9 +443,10 @@ tasks_config = TrackConfig(
         Section("Time-Up-and-Go", "typeTime-Up-and-Go", "160,90,185"),
         Section("One-leg-standing", "typeOne-leg-standing", "180,110,200"),
         Section("Stepping-target", "typeStepping-target", "200,135,210"),
-        Section("Hopping", "typeHopping", "220,160,220"),
-        Section("Squat", "typeSquat", "240,190,230"),
-        Section("Kicking-a-ball", "typeKicking-a-ball", "255,220,240"),
+        Section("Squat", "typeSquat", "220,160,220"),
+        Section("Hopping", "typeHopping", "240,190,230"),
+        # Section("Kicking-a-ball", "typeKicking-a-ball", "255,220,240"),
+
     ],
 )
 

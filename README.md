@@ -14,14 +14,34 @@ Before running the scripts, ensure you have the following installed in your Pyth
 * `openpyxl`
 * *Circos* (installed separately on your system to render the generated configuration files)
 
+   ```cmd
+   pip install pandas openpyxl
+---
+
 ### Installing Circos (Windows)
 Circos is a command-line application written in Perl. It does not have a standard Windows installer, so follow these steps to set it up:
 
 1. **Install a Perl Interpreter:** Download and install [Strawberry Perl](https://strawberryperl.com/).
 2. **Download Circos:** Visit the [Circos Download Page](http://circos.ca/software/download/circos/) and download the `.tgz` archive (e.g., `circos-0.69-10.tgz`).
-3. **Verify Perl Modules:**
-   ```cmd
-   perl C:\Circos_project\circos-0.69-10\bin\circos -modules
+3. **Verify Perl Modules:** Run the following command to check if your system has all the required Perl modules to run Circos.
+```cmd
+perl C:\Circos_project\circos-0.69-10\bin\circos -modules
+```
+
+**Troubleshooting: Missing Modules**
+If the previous command returns a `*** REQUIRED MODULE(S) MISSING OR OUT-OF-DATE ***` error, you will need to install the missing packages using `cpanm`. 
+
+*Run this command to install the most common missing modules:*
+```cmd
+cpanm Font::TTF::Font Config::General Math::Bezier Math::VecStat Params::Validate Readonly Set::IntSpan SVG Regexp::Common Text::Format
+```
+
+*Fixing the `Statistics::Basic` error on Windows:*
+Sometimes, `Statistics::Basic` fails to install because of a Windows locale issue with its dependency, `Number::Format` (which fails its tests). To bypass this bug, force the installation of the dependency first, then install `Statistics::Basic`:
+```cmd
+cpanm --force Number::Format
+cpanm Statistics::Basic
+```
 ---
 
 ## Script Descriptions & Utility
