@@ -1,0 +1,13 @@
+# Ignorer le dossier des modèles MediaPipe
+models/
+
+# Ignorer les fichiers compilés Python
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorer le dossier de cache de Python
+__pycache__/
+
+# Environnement de développement JetBrains
+.idea/
