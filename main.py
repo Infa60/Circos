@@ -386,8 +386,8 @@ tools_config = TrackConfig(
     name="Assessment Tools",
     subdir="assessment_tools",
     sections=[
-        Section("Optoelectronic", "typeOptoelectronic", "40,90,40"),
-        Section("Force-plate", "typeForce-plate", "55,120,55"),
+        Section("Force-plate", "typeForce-plate", "40,90,40"),
+        Section("Optoelectronic", "typeOptoelectronic", "55,120,55"),
         Section("EMG", "typeEMG", "70,150,70"),
         Section("Heart-rate-monitor", "typeHeart-rate-monitor", "90,180,90"),
         Section("Metabolic-cart", "typeMetabolic-cart", "120,200,120"),
@@ -402,12 +402,12 @@ assessment_type_config = TrackConfig(
     subdir="assessment_type",
     sections=[
         Section("Spatiotemporal", "typeSpatiotemporal", "40,90,190"),
-        Section("Kinematics", "typeKinematics", "55,120,210"),
-        Section("Kinetics", "typeKinetics", "70,150,230"),
-        Section("Stability", "typeStability", "90,170,240"),
-        Section("Electromyographic", "typeElectromyographic", "120,190,250"),
-        Section("Metabolic", "typeMetabolic", "170,215,255"),
-        Section("Score", "typeScore", "210,235,255"),
+        Section("Kinematics", "typeKinematics", "74,119,203"),
+        Section("Kinetics", "typeKinetics", "108,148,216"),
+        Section("Electromyographic", "typeElectromyographic", "142,177,229"),
+        Section("Metabolic", "typeMetabolic", "176,206,242"),
+        Section("Score", "typeScore", "210,235,255")
+        # Section("Stability", "typeStability", "90,170,240"),
     ],
 )
 
@@ -439,14 +439,13 @@ tasks_config = TrackConfig(
         Section("Stair-negotiation", "typeStair-negotiation", "95,30,125"),
         Section("Obstacle-clearance", "typeObstacle-clearance", "110,40,140"),
         Section("Game", "typeGame", "125,55,155"),
-        Section("Jumping", "typeJumping", "140,70,170"),
-        Section("Time-Up-and-Go", "typeTime-Up-and-Go", "160,90,185"),
-        Section("One-leg-standing", "typeOne-leg-standing", "180,110,200"),
-        Section("Stepping-target", "typeStepping-target", "200,135,210"),
+        Section("Stepping-target", "typeStepping-target", "140,70,170"),
+        Section("Jumping", "typeJumping", "160,90,185"),
+        Section("Time-Up-and-Go", "typeTime-Up-and-Go", "180,110,200"),
+        Section("One-leg-standing", "typeOne-leg-standing", "200,135,210"),
         Section("Squat", "typeSquat", "220,160,220"),
         Section("Hopping", "typeHopping", "240,190,230"),
-        # Section("Kicking-a-ball", "typeKicking-a-ball", "255,220,240"),
-
+        Section("Climbing", "typeClimbing", "255,220,240"),
     ],
 )
 
