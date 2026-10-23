@@ -48,13 +48,13 @@ from circos_conf_builder import generate_circos_conf
 # ==========================================
 
 # 1. EXCEL FILE PARAMETERS
-EXCEL_PATH = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v1.xlsx"
+EXCEL_PATH = r"C:\Users\bourgema\OneDrive - Université de Genève\Documents\ENABLE\Review\Full_text_inclusion_v2.xlsx"
 SHEET_IDX = 0  # Sheet index
 COL_ART = "ArtNb"  # Article ID column name
 COL_REF = "ref"  # Reference column name
 
 # 2. OUTPUT PARAMETERS
-OUTPUT_DIR = r"C:\Circos_project\Circos_review2"
+OUTPUT_DIR = r"C:\Circos_project\Circos_review_final"
 
 # 3. SCALING PARAMETERS (VISUALIZATION)
 # Min/max visual size of sections (independent of the actual number of articles)
@@ -108,6 +108,11 @@ class TrackConfig:
     dedup: bool = True
     sort_in_section: bool = True
     special_na: Tuple[str, str] | None = None  # ("label_na", "color_na")
+    # Dedicated Excel column flagging "present but unspecified" articles.
+    # When set, the "unspecified" bucket is filled from this column (any value
+    # that is not 0/empty, including "X"), instead of looking for "???" tokens
+    # inside the section columns.
+    na_column: str | None = None
 
     @property
     def out_prefix(self):
@@ -175,7 +180,8 @@ def get_counts_for_config(cfg: TrackConfig) -> Dict[str, int]:
             sval = str(val).strip()
             low = sval.lower()
 
-            if low == "???":
+            # Legacy "???" -> unspecified, disabled when a dedicated na_column is used.
+            if low == "???" and cfg.na_column is None:
                 if cfg.special_na:
                     bucket[tlabel_na].append(art)
                 continue
@@ -187,6 +193,16 @@ def get_counts_for_config(cfg: TrackConfig) -> Dict[str, int]:
 
             tlabel = section_map[col]
             bucket[tlabel].append(art)
+
+        # Dedicated "unspecified" column (e.g. GMFCS-Unspecified / unknown_subtype).
+        if cfg.na_column and tlabel_na:
+            naval = row.get(cfg.na_column)
+            if naval is not None and not (
+                isinstance(naval, float) and pd.isna(naval)
+            ):
+                nas = str(naval).strip()
+                if nas.lower() not in NA_TOKENS and not is_zero_like(nas):
+                    bucket[tlabel_na].append(art)
 
     counts = {}
     for t in sections_order:
@@ -233,6 +249,8 @@ def build_track(cfg: TrackConfig, start_line, end_line, global_min, global_max):
             sval = str(val).strip()
             low = sval.lower()
 
+            # "???" = present but unspecified for this group -> never counted as a
+            # specific section; routed to the unspecified bucket when one exists.
             if low == "???":
                 if cfg.special_na:
                     bucket[tlabel_na].append(
@@ -253,6 +271,20 @@ def build_track(cfg: TrackConfig, start_line, end_line, global_min, global_max):
             bucket[tlabel].append(
                 f"{art}\t{start_line}\t{end_line}\t{tlabel}\t0\tSIZE_PLACEHOLDER\tcolor={color}"
             )
+
+        # Dedicated "unspecified" column (e.g. GMFCS-Unspecified / unknown_subtype).
+        # Any non-zero / non-empty value counts, including "X" (present but the
+        # exact number of participants is unknown).
+        if cfg.na_column and tlabel_na:
+            naval = row.get(cfg.na_column)
+            if naval is not None and not (
+                isinstance(naval, float) and pd.isna(naval)
+            ):
+                nas = str(naval).strip()
+                if nas.lower() not in NA_TOKENS and not is_zero_like(nas):
+                    bucket[tlabel_na].append(
+                        f"{art}\t{start_line}\t{end_line}\t{tlabel_na}\t0\tSIZE_PLACEHOLDER\tcolor={color_na}"
+                    )
 
     # 2. Calculations & Sorting
     real_counts = {}
@@ -351,6 +383,7 @@ gmfcs_config = TrackConfig(
     name="GMFCS Level",
     subdir="gmfcs_level",
     special_na=("typeGMFCS-Unspecified", "255,150,150"),
+    na_column="GMFCS-Unspecified",
     sections=[
         Section("GMFCS-I", "typeGMFCS-I", "120,0,0"),
         Section("GMFCS-II", "typeGMFCS-II", "160,20,20"),
@@ -363,6 +396,7 @@ cp_type_config = TrackConfig(
     name="CP Type",
     subdir="cp_type",
     special_na=("typeType-Unspecified", "255,160,80"),
+    na_column="unknown_subtype",
     sections=[
         Section("Spastic", "typeSpastic", "120,45,0"),
         Section("Dyskinetic", "typeDyskinetic", "165,60,0"),
@@ -371,14 +405,24 @@ cp_type_config = TrackConfig(
     ],
 )
 
+# laterality_config = TrackConfig(
+#     name="Topography",
+#     subdir="cp_topography",
+#     special_na=("typeUnspecified-Topography", "255,230,80"),
+#     sections=[
+#         Section("Hemiplegic", "typeHemiplegic", "150,120,0"),
+#         Section("Diplegic", "typeDiplegic", "200,160,0"),
+#         Section("Quadriplegic", "typeQuadriplegic", "240,200,20"),
+#     ],
+# )
+
 laterality_config = TrackConfig(
     name="Topography",
     subdir="cp_topography",
     special_na=("typeUnspecified-Topography", "255,230,80"),
     sections=[
-        Section("Hemiplegic", "typeHemiplegic", "150,120,0"),
-        Section("Diplegic", "typeDiplegic", "200,160,0"),
-        Section("Quadriplegic", "typeQuadriplegic", "240,200,20"),
+        Section("Unilateral", "typeUnilateral", "150,120,0"),
+        Section("Bilateral", "typeBilateral", "200,160,0"),
     ],
 )
 
@@ -387,12 +431,13 @@ tools_config = TrackConfig(
     subdir="assessment_tools",
     sections=[
         Section("Force-plate", "typeForce-plate", "40,90,40"),
-        Section("Optoelectronic", "typeOptoelectronic", "55,120,55"),
-        Section("EMG", "typeEMG", "70,150,70"),
-        Section("Heart-rate-monitor", "typeHeart-rate-monitor", "90,180,90"),
-        Section("Metabolic-cart", "typeMetabolic-cart", "120,200,120"),
-        Section("IMU", "typeIMU", "150,220,150"),
-        Section("Wii-fit", "typeWii-fit", "180,240,180"),
+        Section("Optoelectronic", "typeOptoelectronic", "58,120,58"),
+        Section("EMG", "typeEMG", "78,150,78"),
+        Section("Metabolic-cart", "typeMetabolic-cart", "98,176,98"),
+        Section("Heart-rate-monitor", "typeHeart-rate-monitor", "120,198,120"),
+        Section("IMU", "typeIMU", "142,214,142"),
+        Section("Video-camera", "typeVideo-camera", "165,227,165"),
+        Section("Wii-fit", "typeWii-fit", "188,240,188"),
         Section("Other-tools", "typeOther-tools", "210,255,210"),
     ],
 )
@@ -402,8 +447,8 @@ assessment_type_config = TrackConfig(
     subdir="assessment_type",
     sections=[
         Section("Spatiotemporal", "typeSpatiotemporal", "40,90,190"),
-        Section("Kinematics", "typeKinematics", "74,119,203"),
-        Section("Kinetics", "typeKinetics", "108,148,216"),
+        Section("Kinetics", "typeKinetics", "74,119,203"),
+        Section("Kinematics", "typeKinematics", "108,148,216"),
         Section("Electromyographic", "typeElectromyographic", "142,177,229"),
         Section("Metabolic", "typeMetabolic", "176,206,242"),
         Section("Score", "typeScore", "210,235,255")
@@ -429,6 +474,26 @@ assessment_type_config = TrackConfig(
 #     ]
 # )
 
+# tasks_config = TrackConfig(
+#     name="Task Type",
+#     subdir="tasks_type",
+#     sections=[
+#         Section("Sit-to-stand", "typeSit-to-stand", "50,0,80"),
+#         Section("Running", "typeRunning", "65,10,95"),
+#         Section("Cycling", "typeCycling", "80,20,110"),
+#         Section("Stair-negotiation", "typeStair-negotiation", "95,30,125"),
+#         Section("Game", "typeGame", "110,40,140"),
+#         Section("Obstacle-clearance", "typeObstacle-clearance", "125,55,155"),
+#         Section("Stepping-target", "typeStepping-target", "140,70,170"),
+#         Section("Jumping", "typeJumping", "160,90,185"),
+#         Section("Timed-Up-and-Go", "typeTime-Up-and-Go", "180,110,200"),
+#         Section("One-leg-standing", "typeOne-leg-standing", "200,135,210"),
+#         Section("Squat", "typeSquat", "220,160,220"),
+#         Section("Hopping", "typeHopping", "240,190,230"),
+#         Section("Climbing", "typeClimbing", "255,220,240"),
+#     ],
+# )
+
 tasks_config = TrackConfig(
     name="Task Type",
     subdir="tasks_type",
@@ -437,11 +502,11 @@ tasks_config = TrackConfig(
         Section("Running", "typeRunning", "65,10,95"),
         Section("Cycling", "typeCycling", "80,20,110"),
         Section("Stair-negotiation", "typeStair-negotiation", "95,30,125"),
-        Section("Obstacle-clearance", "typeObstacle-clearance", "110,40,140"),
-        Section("Game", "typeGame", "125,55,155"),
+        Section("Weight-shifting", "typeWeight-shifting", "110,40,140"),
+        Section("Obstacle-clearance", "typeObstacle-clearance", "125,55,155"),
         Section("Stepping-target", "typeStepping-target", "140,70,170"),
         Section("Jumping", "typeJumping", "160,90,185"),
-        Section("Time-Up-and-Go", "typeTime-Up-and-Go", "180,110,200"),
+        Section("Timed-Up-and-Go", "typeTime-Up-and-Go", "180,110,200"),
         Section("One-leg-standing", "typeOne-leg-standing", "200,135,210"),
         Section("Squat", "typeSquat", "220,160,220"),
         Section("Hopping", "typeHopping", "240,190,230"),
