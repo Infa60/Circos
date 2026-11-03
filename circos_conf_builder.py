@@ -127,7 +127,8 @@ data_out_of_range* = trim
 karyotype = {karyotype_string}
 chromosomes_units           = 1
 chromosomes_display_default = yes
-chromosomes_scale           = /art/:0.85
+# ^ anchors the match: /art/ alone also shrinks typeMetabolic-cart and typeHeart-rate-monitor
+chromosomes_scale           = /^art/:0.85
 
 # ----------------------------------------------
 # IDEOGRAM

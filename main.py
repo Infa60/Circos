@@ -437,7 +437,7 @@ tools_config = TrackConfig(
         Section("Heart-rate-monitor", "typeHeart-rate-monitor", "120,198,120"),
         Section("IMU", "typeIMU", "142,214,142"),
         Section("Video-camera", "typeVideo-camera", "165,227,165"),
-        Section("Wii-fit", "typeWii-fit", "188,240,188"),
+        Section("Wii-fit", "typeWii-Fit", "188,240,188"),  # label "Wii Fit", as in the manuscript
         Section("Other-tools", "typeOther-tools", "210,255,210"),
     ],
 )
@@ -506,7 +506,7 @@ tasks_config = TrackConfig(
         Section("Obstacle-clearance", "typeObstacle-clearance", "125,55,155"),
         Section("Stepping-target", "typeStepping-target", "140,70,170"),
         Section("Jumping", "typeJumping", "160,90,185"),
-        Section("Timed-Up-and-Go", "typeTime-Up-and-Go", "180,110,200"),
+        Section("Timed-Up-and-Go", "typeTimed-Up-and-Go", "180,110,200"),
         Section("One-leg-standing", "typeOne-leg-standing", "200,135,210"),
         Section("Squat", "typeSquat", "220,160,220"),
         Section("Hopping", "typeHopping", "240,190,230"),
